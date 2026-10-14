@@ -13,6 +13,7 @@ Usage:
   mcp-builder init <project-name> [options]
   mcp-builder add-tool <tool-name> [options]
   mcp-builder from-openapi <openapi-spec-path> [options]
+  mcp-builder inspect "<server-command>"
   mcp-builder --help
   mcp-builder --version
 
@@ -20,6 +21,7 @@ Commands:
   init <name>              Scaffolds a new MCP server project
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
+  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -244,6 +246,54 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : "Failed to parse spec";
       console.error(`❌ Failed to convert OpenAPI spec: ${errorMsg}`);
+      process.exit(1);
+    }
+  }
+
+  // 4. mcp-builder inspect
+  if (command === "inspect") {
+    const targetCommand = args[1];
+    if (!targetCommand || targetCommand.startsWith("-")) {
+      console.error("❌ Error: Missing server command. Run: mcp-builder inspect \"node ./dist/index.js\"");
+      process.exit(1);
+    }
+
+    const commandArgs = args.slice(2);
+    console.log(`\n🔍 Inspecting MCP Server: ${targetCommand} ${commandArgs.join(" ")}`);
+    console.log("   • Connecting via stdio transport...");
+
+    const { McpServerInspector } = await import("./inspector.js");
+    const inspector = new McpServerInspector({
+      command: targetCommand,
+      args: commandArgs,
+    });
+
+    try {
+      const report = await inspector.inspect();
+      console.log("\n================ MCP INSPECTION REPORT ================");
+      console.log(`Server:           ${report.serverInfo ? `${report.serverInfo.name} (v${report.serverInfo.version})` : "Anonymous"}`);
+      console.log(`Protocol Version: ${report.protocolVersion}`);
+      console.log(`Latency:          ${report.latencyMs}ms`);
+      console.log("\nCapabilities:");
+      console.log(`   • Tools:     ${report.capabilities.tools ? "✅ Supported" : "❌ Disabled"}`);
+      console.log(`   • Resources: ${report.capabilities.resources ? "✅ Supported" : "❌ Disabled"}`);
+      console.log(`   • Prompts:   ${report.capabilities.prompts ? "✅ Supported" : "❌ Disabled"}`);
+
+      console.log("\nConformance Checks:");
+      for (const check of report.conformanceChecks) {
+        console.log(`   ${check.passed ? "✅" : "❌"} ${check.name}: ${check.details || ""}`);
+      }
+
+      console.log(`\nDiscovered Tools (${report.discoveredTools.length}):`);
+      for (const t of report.discoveredTools) {
+        console.log(`   🛠️  ${t.name} — ${t.description || "No description"}`);
+      }
+
+      console.log("=======================================================\n");
+      return;
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : "Inspection failed";
+      console.error(`❌ Inspection error: ${errorMsg}`);
       process.exit(1);
     }
   }

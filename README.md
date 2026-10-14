@@ -50,6 +50,12 @@ npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
 npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 ```
 
+### 5. Inspect & Verify Protocol Conformance
+```bash
+# Run headless automated JSON-RPC 2.0 handshake and tool verification
+npx @ritualdev_lab/mcp-builder-kit inspect "node ./dist/index.js"
+```
+
 ---
 
 ## 💻 CLI Commands & Options
@@ -59,6 +65,7 @@ Commands:
   init <name>              Scaffolds a new MCP server project
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
+  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -78,7 +85,12 @@ Options for 'add-tool':
 ## 🧩 Programmatic SDK
 
 ```typescript
-import { McpProjectScaffolder, McpCodeGenerator, OpenApiToMcpConverter } from "@ritualdev_lab/mcp-builder-kit";
+import {
+  McpProjectScaffolder,
+  McpCodeGenerator,
+  OpenApiToMcpConverter,
+  McpServerInspector,
+} from "@ritualdev_lab/mcp-builder-kit";
 
 // 1. Scaffold a project
 const result = McpProjectScaffolder.scaffold({
@@ -101,6 +113,14 @@ const mcpTools = OpenApiToMcpConverter.convert({
   spec: mySwaggerJson,
   language: "typescript",
 });
+
+// 4. Headless Conformance Inspector
+const inspector = new McpServerInspector({
+  command: "node",
+  args: ["./dist/index.js"],
+});
+const report = await inspector.inspect();
+console.log(`Discovered ${report.discoveredTools.length} tools, latency: ${report.latencyMs}ms`);
 ```
 
 ---
@@ -109,7 +129,7 @@ const mcpTools = OpenApiToMcpConverter.convert({
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
 - [x] **Phase 2: Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`)**
-- [ ] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
+- [x] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
 - [ ] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation**
 - [ ] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing**
 

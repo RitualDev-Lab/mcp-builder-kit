@@ -60,3 +60,60 @@ export interface OpenApiConversionResult {
   tools: ToolDefinition[];
   generatedCode: string;
 }
+
+export interface McpJsonRpcRequest {
+  jsonrpc: "2.0";
+  id: string | number;
+  method: string;
+  params?: Record<string, unknown>;
+}
+
+export interface McpJsonRpcResponse {
+  jsonrpc: "2.0";
+  id: string | number;
+  result?: unknown;
+  error?: {
+    code: number;
+    message: string;
+    data?: unknown;
+  };
+}
+
+export interface McpDiscoveredTool {
+  name: string;
+  description?: string;
+  inputSchema?: {
+    type?: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+export interface McpDiscoveredResource {
+  uri: string;
+  name?: string;
+  mimeType?: string;
+  description?: string;
+}
+
+export interface McpInspectionReport {
+  serverCommand: string;
+  protocolVersion: string;
+  serverInfo?: {
+    name: string;
+    version: string;
+  };
+  capabilities: {
+    tools: boolean;
+    resources: boolean;
+    prompts: boolean;
+  };
+  discoveredTools: McpDiscoveredTool[];
+  discoveredResources: McpDiscoveredResource[];
+  conformanceChecks: {
+    name: string;
+    passed: boolean;
+    details?: string;
+  }[];
+  latencyMs: number;
+}
