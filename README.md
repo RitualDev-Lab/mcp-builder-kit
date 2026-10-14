@@ -12,6 +12,14 @@
   Scaffold typed TypeScript & FastMCP Python servers, generate tools from OpenAPI, run headless inspectors, and deploy to Claude Desktop, Antigravity, and Cursor in seconds.
 </p>
 
+<p align="center">
+  <a href="https://mcp.ritualdev.in"><b>🌐 Website & Docs</b></a> •
+  <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/wiki"><b>📚 Developer Wiki</b></a> •
+  <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/discussions"><b>💬 Discussions</b></a> •
+  <a href="https://github.com/sponsors/RitualDev-Lab"><b>💜 Sponsor</b></a> •
+  <a href="https://polar.sh/RitualDev-Lab/mcp-builder-kit"><b>⚡ Bounties</b></a>
+</p>
+
 ---
 
 ## 🚀 Features

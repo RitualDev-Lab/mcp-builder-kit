@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Builder Kit — Production Model Context Protocol Development Suite</title>
+  
+  <!-- SEO Primary Meta Tags -->
+  <meta name="title" content="MCP Builder Kit — Production Model Context Protocol Development Suite">
+  <meta name="description" content="Production-ready scaffolding, OpenAPI conversion, headless protocol inspector, AgentShield zero-leak security audit, and 1-click Docker packaging for Model Context Protocol (MCP) servers in TypeScript & Python.">
+  <meta name="keywords" content="Model Context Protocol, MCP, MCP Server, Claude Desktop, Cursor, Antigravity, AgentShield, FastMCP, OpenAPI to MCP, AI Agents, RitualDev Lab">
+  <meta name="author" content="RitualDev Lab">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://mcp.ritualdev.in/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mcp.ritualdev.in/">
+  <meta property="og:title" content="MCP Builder Kit — Production Model Context Protocol Suite">
+  <meta property="og:description" content="Build, test, audit, and package production-grade Model Context Protocol (MCP) servers in seconds.">
+  <meta property="og:image" content="https://mcp.ritualdev.in/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://mcp.ritualdev.in/">
+  <meta name="twitter:title" content="MCP Builder Kit — Production Model Context Protocol Suite">
+  <meta name="twitter:description" content="Production scaffolding, OpenAPI auto-mapper, headless JSON-RPC test runner, and AgentShield security audit for MCP servers.">
+  <meta name="twitter:image" content="https://mcp.ritualdev.in/og-image.png">
+
+  <!-- Schema.org Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MCP Builder Kit",
+    "operatingSystem": "Cross-platform (Linux, macOS, Windows)",
+    "applicationCategory": "DeveloperApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    },
+    "description": "Production-grade toolchain for building, auditing, testing, and packaging Model Context Protocol (MCP) servers.",
+    "url": "https://mcp.ritualdev.in",
+    "author": {
+      "@type": "Organization",
+      "name": "RitualDev Lab",
+      "url": "https://github.com/RitualDev-Lab"
+    }
+  }
+  </script>
+
+  <!-- Tailwind CSS CDN for instant responsive styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Navigation Bar -->
+  <nav class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">⚡</span>
+        <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">MCP Builder Kit</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">v1.0.0</span>
+      </div>
+      <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-400">
+        <a href="#features" class="hover:text-indigo-400 transition-colors">Features</a>
+        <a href="#quickstart" class="hover:text-indigo-400 transition-colors">Quickstart</a>
+        <a href="#security" class="hover:text-indigo-400 transition-colors">AgentShield Audit</a>
+        <a href="#monetization" class="hover:text-indigo-400 transition-colors">Ecosystem & Store</a>
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/wiki" class="hover:text-indigo-400 transition-colors">Wiki</a>
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/discussions" class="hover:text-indigo-400 transition-colors">Discussions</a>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/sponsors/RitualDev-Lab" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-pink-500/30 bg-pink-500/10 text-pink-400 text-xs font-semibold hover:bg-pink-500/20 transition-all">
+          <span>💜 Sponsor</span>
+        </a>
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit" target="_blank" rel="noreferrer" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2">
+          <span>GitHub</span>
+          <span>★</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Header -->
+  <header class="relative pt-24 pb-20 overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.25),rgba(255,255,255,0))]"></div>
+    <div class="max-w-5xl mx-auto px-6 text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold mb-8">
+        <span>🛡️ Cryptographic SLSA Level 3 Certified</span>
+        <span class="text-slate-500">•</span>
+        <span>AgentShield Zero-Leak Guarantee</span>
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.15] mb-6">
+        Build, Audit & Ship Production <br>
+        <span class="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">Model Context Protocol</span> Servers
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+        The ultimate enterprise-grade toolchain for building, testing, auditing, and packaging MCP servers for Claude Desktop, Cursor, and Autonomous AI Agents.
+      </p>
+
+      <!-- Terminal / Copy Command -->
+      <div class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-2xl flex items-center justify-between text-left mb-10">
+        <code class="text-sm text-indigo-300 select-all font-mono">
+          <span class="text-pink-400 font-bold">$</span> npx @ritualdev_lab/mcp-builder-kit init my-mcp-server
+        </code>
+        <button onclick="navigator.clipboard.writeText('npx @ritualdev_lab/mcp-builder-kit init my-mcp-server')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded font-medium text-slate-300 transition-colors">
+          Copy
+        </button>
+      </div>
+
+      <!-- Live Badges -->
+      <div class="flex flex-wrap justify-center gap-3">
+        <img src="https://img.shields.io/badge/Verified%20MCP%20Server-AgentShield%20Zero--Leak-8b5cf6?logo=shield&logoColor=white&style=flat-square" alt="Verified MCP">
+        <img src="https://img.shields.io/badge/Featured%20on-DevShelf%20MCP%20Directory-6366f1?logo=sparkles&logoColor=white&style=flat-square" alt="DevShelf">
+        <img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg?style=flat-square" alt="License">
+        <img src="https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen?style=flat-square" alt="Tests">
+      </div>
+    </div>
+  </header>
+
+  <!-- Core Features Grid -->
+  <section id="features" class="py-20 border-t border-slate-900 bg-slate-950/60">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold tracking-tight mb-4">Everything You Need for Enterprise MCP</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">From initial prototype to production air-gapped deployment with full security verification.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">🚀</div>
+          <h3 class="text-lg font-bold mb-2">Instant Scaffolder & Starters</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Generate clean TypeScript (SDK) and Python (FastMCP) projects with stdio, SSE, and hybrid transports out of the box.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">🔄</div>
+          <h3 class="text-lg font-bold mb-2">OpenAPI to MCP Compiler</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Point to any OpenAPI 3.0 / Swagger JSON/YAML file and instantly generate typed MCP tools, Zod parameter validators, and handlers.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">🕵️</div>
+          <h3 class="text-lg font-bold mb-2">Headless Protocol Inspector</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Run automated headless end-to-end JSON-RPC handshakes, tool executions, and resource listings directly in CI/CD without manual UI testing.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">🛡️</div>
+          <h3 class="text-lg font-bold mb-2">AgentShield Zero-Leak Audit</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Deep AST static analysis scans for hardcoded secrets, shell command injections, path traversals, and emits runtime parameter sanitizers.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">📦</div>
+          <h3 class="text-lg font-bold mb-2">1-Click Multi-IDE Packaging</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Auto-generate multi-stage production Dockerfiles, Claude Desktop configs, Cursor settings, Antigravity configs, and registry manifests.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition-all">
+          <div class="text-3xl mb-4">💼</div>
+          <h3 class="text-lg font-bold mb-2">Monetization & Ecosystem</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Turnkey enterprise connectors, verified audit badges, DevShelf directory spotlights, and foundation ecosystem grant pitch generation.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Community & Ecosystem Links -->
+  <section class="py-16 border-t border-slate-900 bg-slate-900/30">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <h2 class="text-2xl font-bold mb-4">Join the Open-Source Protocol Community</h2>
+      <p class="text-slate-400 text-sm max-w-xl mx-auto mb-8">
+        Connect with contributors, participate in architectural RFCs, view developer wikis, or claim open bounties.
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/discussions" class="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-sm font-semibold text-white transition-all flex items-center gap-2">
+          <span>💬 GitHub Discussions</span>
+        </a>
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/wiki" class="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-sm font-semibold text-white transition-all flex items-center gap-2">
+          <span>📚 Developer Wiki & Guides</span>
+        </a>
+        <a href="https://github.com/sponsors/RitualDev-Lab" class="px-5 py-2.5 rounded-xl border border-pink-500/30 bg-pink-500/10 hover:bg-pink-500/20 text-sm font-semibold text-pink-300 transition-all flex items-center gap-2">
+          <span>💜 Sponsor the Guild</span>
+        </a>
+        <a href="https://polar.sh/RitualDev-Lab/mcp-builder-kit" class="px-5 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-sm font-semibold text-indigo-300 transition-all flex items-center gap-2">
+          <span>⚡ Polar.sh Bounties</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 py-10 bg-slate-950 text-slate-500 text-xs">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© 2026 RitualDev Lab. Released under Apache-2.0 License.</p>
+      <div class="flex items-center space-x-6">
+        <a href="https://github.com/RitualDev-Lab/mcp-builder-kit" class="hover:text-slate-300">GitHub</a>
+        <a href="https://mcp.ritualdev.in/sitemap.xml" class="hover:text-slate-300">Sitemap</a>
+        <a href="https://devshelf.ritualdev.in" class="hover:text-slate-300">DevShelf</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
