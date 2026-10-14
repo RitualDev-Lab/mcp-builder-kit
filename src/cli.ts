@@ -14,6 +14,7 @@ Usage:
   mcp-builder add-tool <tool-name> [options]
   mcp-builder from-openapi <openapi-spec-path> [options]
   mcp-builder inspect "<server-command>"
+  mcp-builder audit [target-dir]
   mcp-builder --help
   mcp-builder --version
 
@@ -22,6 +23,7 @@ Commands:
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
+  audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -296,6 +298,42 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       console.error(`❌ Inspection error: ${errorMsg}`);
       process.exit(1);
     }
+  }
+
+  // 5. mcp-builder audit
+  if (command === "audit") {
+    const targetDir = resolve(process.cwd(), args[1] || ".");
+    console.log(`\n🛡️  Running AgentShield Security Audit on: ${targetDir}`);
+    console.log("   • Scanning for hardcoded secrets, injection vectors & traversal risks...\n");
+
+    const { AgentShieldMcpAuditor } = await import("./security.js");
+    const report = AgentShieldMcpAuditor.auditDirectory(targetDir);
+
+    console.log("================ AGENTSHIELD MCP AUDIT REPORT ================");
+    console.log(`Target Directory:   ${report.targetDir}`);
+    console.log(`Scanned Files:      ${report.scannedFilesCount}`);
+    console.log(`Security Score:     ${report.score} / 100 (${report.isSecure ? "✅ SECURE" : "⚠️ VULNERABLE"})`);
+    console.log(`Findings Summary:   Critical: ${report.summary.critical} | High: ${report.summary.high} | Medium: ${report.summary.medium} | Low: ${report.summary.low}`);
+
+    if (report.findings.length === 0) {
+      console.log("\n✨ 0 Vulnerabilities detected! Your MCP server conforms to Zero-Leak standards.\n");
+    } else {
+      console.log("\nDetected Security Findings:");
+      for (const f of report.findings) {
+        console.log(`\n[${f.severity.toUpperCase()}] ${f.id}: ${f.description}`);
+        console.log(`   File:   ${f.file}${f.line ? `:${f.line}` : ""}`);
+        if (f.snippet) {
+          console.log(`   Match:  ${f.snippet}`);
+        }
+        console.log(`   Fix:    ${f.remediation}`);
+      }
+    }
+    console.log("==============================================================\n");
+
+    if (!report.isSecure) {
+      process.exit(1);
+    }
+    return;
   }
 
   console.error(`❌ Unknown command: '${command}'. Run 'mcp-builder --help' for available commands.`);

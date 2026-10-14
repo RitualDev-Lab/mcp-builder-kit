@@ -50,10 +50,10 @@ npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
 npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 ```
 
-### 5. Inspect & Verify Protocol Conformance
+### 6. AgentShield Security Audit & Vulnerability Scan
 ```bash
-# Run headless automated JSON-RPC 2.0 handshake and tool verification
-npx @ritualdev_lab/mcp-builder-kit inspect "node ./dist/index.js"
+# Scan server source code for hardcoded API keys, shell injection, and traversal bugs
+npx @ritualdev_lab/mcp-builder-kit audit ./my-server
 ```
 
 ---
@@ -66,6 +66,7 @@ Commands:
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
+  audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -90,6 +91,7 @@ import {
   McpCodeGenerator,
   OpenApiToMcpConverter,
   McpServerInspector,
+  AgentShieldMcpAuditor,
 } from "@ritualdev_lab/mcp-builder-kit";
 
 // 1. Scaffold a project
@@ -121,6 +123,10 @@ const inspector = new McpServerInspector({
 });
 const report = await inspector.inspect();
 console.log(`Discovered ${report.discoveredTools.length} tools, latency: ${report.latencyMs}ms`);
+
+// 5. AgentShield Pre-Flight Security Audit
+const audit = AgentShieldMcpAuditor.auditDirectory("./src");
+console.log(`Security Score: ${audit.score}/100, isSecure: ${audit.isSecure}`);
 ```
 
 ---
@@ -130,7 +136,7 @@ console.log(`Discovered ${report.discoveredTools.length} tools, latency: ${repor
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
 - [x] **Phase 2: Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`)**
 - [x] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
-- [ ] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation**
+- [x] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation (`mcp-builder audit`)**
 - [ ] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing**
 
 ---

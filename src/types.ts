@@ -117,3 +117,30 @@ export interface McpInspectionReport {
   }[];
   latencyMs: number;
 }
+
+export type SecurityFindingSeverity = "critical" | "high" | "medium" | "low";
+
+export interface SecurityFinding {
+  id: string;
+  type: "hardcoded_secret" | "command_injection" | "path_traversal" | "insecure_transport" | "wildcard_permission";
+  severity: SecurityFindingSeverity;
+  file: string;
+  line?: number;
+  snippet?: string;
+  description: string;
+  remediation: string;
+}
+
+export interface McpSecurityAuditReport {
+  targetDir: string;
+  scannedFilesCount: number;
+  findings: SecurityFinding[];
+  score: number; // 0 to 100
+  isSecure: boolean;
+  summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+}
