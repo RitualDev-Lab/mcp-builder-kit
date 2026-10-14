@@ -151,6 +151,25 @@ npx @ritualdev_lab/mcp-builder-kit packs install enterprise-database-pack
 
 ---
 
+## 🛡️ "Verified Secure MCP Server" Certification & Badges ($29 – $79)
+
+Display an official cryptographic security audit badge on your MCP server's `README.md` to prove zero-leak compliance to users and enterprise clients:
+
+[![Verified Secure MCP Server](https://img.shields.io/badge/Verified%20MCP%20Server-AgentShield%20Zero--Leak-8b5cf6?logo=shield&logoColor=white&style=flat-square)](https://agentshield.ritualdev.in/verify/sample)
+[![Verified MCP Sponsor](https://img.shields.io/badge/Verified%20MCP%20Server-AgentShield%20%E2%98%85%20Sponsor-ec4899?logo=shield&logoColor=white&style=flat-square)](https://agentshield.ritualdev.in/verify/sample)
+
+| Certification Tier | Price | Verification Includes | Self-Serve Checkout |
+| :--- | :---: | :--- | :---: |
+| **Verified Zero-Leak Badge** | **$29** (one-time) | Cryptographic HMAC audit record, dynamic SVG badge, Zero-Leak pass certification | [**Claim Verified Badge ($29) →**](https://checkout.dodopayments.com/buy/pdt_agentshield_verified_badge?tier=verified&price=29) |
+| **Sponsor ★ Top Placement** | **$79** (one-time) | Verified Zero-Leak audit, pink Sponsor ★ badge, featured spotlight listing on DevShelf | [**Claim Sponsor Badge ($79) →**](https://checkout.dodopayments.com/buy/pdt_agentshield_verified_badge?tier=sponsor&price=79) |
+
+```bash
+# Generate verified badge markdown snippet and checkout link
+npx @ritualdev_lab/mcp-builder-kit badge my-server-name --tier verified
+```
+
+---
+
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**

@@ -3,7 +3,13 @@ import { resolve } from "node:path";
 import { McpCodeGenerator } from "./generator.js";
 import { OpenApiToMcpConverter } from "./openapi.js";
 import { McpProjectScaffolder } from "./scaffolder.js";
-import type { McpLanguage, McpTransport, ToolDefinition, ToolParameter } from "./types.js";
+import type {
+  McpLanguage,
+  McpTransport,
+  ToolDefinition,
+  ToolParameter,
+  McpBadgeTier,
+} from "./types.js";
 
 function printHelp(): void {
   console.log(`
@@ -17,6 +23,7 @@ Usage:
   mcp-builder audit [target-dir]
   mcp-builder package [target-dir] [options]
   mcp-builder packs [list|install] [pack-id] [options]
+  mcp-builder badge <server-name> [options]
   mcp-builder --help
   mcp-builder --version
 
@@ -28,6 +35,7 @@ Commands:
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
   packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
+  badge <server-name>      Generates cryptographically verified AgentShield badge & checkout URL
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -342,8 +350,11 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
     if (report.findings.length === 0) {
       console.log(
-        "\n✨ 0 Vulnerabilities detected! Your MCP server conforms to Zero-Leak standards.\n",
+        "\n✨ 0 Vulnerabilities detected! Your MCP server conforms to Zero-Leak standards.",
       );
+      const serverSlug = targetDir.split(/[\\/]/).pop() || "my-mcp-server";
+      console.log(`\n🏆 Claim your Official "Verified Secure MCP Server" Badge & Certification:`);
+      console.log(`   👉 Run: npx @ritualdev_lab/mcp-builder-kit badge ${serverSlug}\n`);
     } else {
       console.log("\nDetected Security Findings:");
       for (const f of report.findings) {
@@ -479,6 +490,42 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       `❌ Unknown sub-command '${subCommand}'. Use 'mcp-builder packs list' or 'mcp-builder packs install <pack-id>'`,
     );
     process.exit(1);
+  }
+
+  // 8. mcp-builder badge (AgentShield Verified MCP Server Audit Badge & Self-Serve Checkout)
+  if (command === "badge") {
+    const serverName = args[1];
+    if (!serverName || serverName.startsWith("-")) {
+      console.error("❌ Error: Missing server name. Run: mcp-builder badge <server-name> [--tier verified|sponsor]");
+      process.exit(1);
+    }
+
+    let tier: McpBadgeTier = "verified";
+    for (let i = 2; i < args.length; i++) {
+      if (args[i] === "--tier" && args[i + 1]) {
+        const rawTier = args[i + 1].toLowerCase();
+        if (rawTier === "verified" || rawTier === "sponsor" || rawTier === "enterprise") {
+          tier = rawTier;
+        }
+        i++;
+      }
+    }
+
+    const { VerifiedMcpBadgeService } = await import("./badge.js");
+    const snippet = VerifiedMcpBadgeService.getBadgeSnippet(serverName, tier);
+
+    console.log(`\n🛡️  AgentShield Verified MCP Server Badge for: '${serverName}' (${tier.toUpperCase()})`);
+    console.log("========================================================================\n");
+    console.log("Markdown Snippet for README.md:");
+    console.log(snippet.markdown);
+    console.log("\nHTML Snippet:");
+    console.log(snippet.html);
+    console.log("\nVerification URL:");
+    console.log(`👉 ${snippet.verifyUrl}`);
+    console.log("\n🛒 Claim / Certify Official Verified Status via Dodo Payments ($29 - $79):");
+    console.log(`👉 ${snippet.checkoutUrl}\n`);
+    console.log("========================================================================\n");
+    return;
   }
 
   console.error(

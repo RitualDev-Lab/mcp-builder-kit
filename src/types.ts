@@ -122,12 +122,7 @@ export type SecurityFindingSeverity = "critical" | "high" | "medium" | "low";
 
 export interface SecurityFinding {
   id: string;
-  type:
-    | "hardcoded_secret"
-    | "command_injection"
-    | "path_traversal"
-    | "insecure_transport"
-    | "wildcard_permission";
+  type: "hardcoded_secret" | "command_injection" | "path_traversal" | "insecure_transport" | "wildcard_permission";
   severity: SecurityFindingSeverity;
   file: string;
   line?: number;
@@ -178,4 +173,15 @@ export interface PremiumPackDefinition {
   checkoutUrl: string;
   features: string[];
   sampleTools: string[];
+}
+
+export type McpBadgeTier = "verified" | "sponsor" | "enterprise";
+
+export interface McpBadgeSnippetResult {
+  markdown: string;
+  html: string;
+  svgBadgeUrl: string;
+  verifyUrl: string;
+  checkoutUrl: string;
+  tier: McpBadgeTier;
 }
