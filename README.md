@@ -87,6 +87,12 @@ Commands:
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
+  packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
+  badge <server-name>      Generates cryptographically verified AgentShield badge & checkout URL
+  spotlight <server-name>  Generates DevShelf Featured Spotlight placement and Dodo checkout link
+  turnkey [tier]           Initiates B2B turnkey custom MCP server development inquiry & deposit link
+  grants [id]              Browse foundation ecosystem grants ($1k-$25k) and generate grant pitch
+  bounties                 Browse funded open-source bounties with Polar.sh rewards
 ```
 
 ---
