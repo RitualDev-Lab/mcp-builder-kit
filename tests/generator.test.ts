@@ -9,9 +9,24 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
     name: "calculate_tax",
     description: "Calculates federal and state sales tax",
     parameters: [
-      { name: "subtotal", type: "number", description: "Subtotal amount in dollars", required: true },
-      { name: "state_code", type: "string", description: "Two letter state abbreviation", required: true },
-      { name: "tax_exempt", type: "boolean", description: "Whether customer has tax exempt status", required: false },
+      {
+        name: "subtotal",
+        type: "number",
+        description: "Subtotal amount in dollars",
+        required: true,
+      },
+      {
+        name: "state_code",
+        type: "string",
+        description: "Two letter state abbreviation",
+        required: true,
+      },
+      {
+        name: "tax_exempt",
+        type: "boolean",
+        description: "Whether customer has tax exempt status",
+        required: false,
+      },
     ],
   };
 
@@ -22,7 +37,11 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
     assert.ok(tsCode.includes("calculateTaxArgsSchema = z.object({"));
     assert.ok(tsCode.includes("subtotal: z.number()"));
     assert.ok(tsCode.includes("state_code: z.string()"));
-    assert.ok(tsCode.includes("tax_exempt: z.boolean().describe(\"Whether customer has tax exempt status\").optional()"));
+    assert.ok(
+      tsCode.includes(
+        'tax_exempt: z.boolean().describe("Whether customer has tax exempt status").optional()',
+      ),
+    );
     assert.ok(tsCode.includes("handleCalculateTax("));
   });
 
@@ -30,7 +49,11 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
     const pyCode = McpCodeGenerator.generatePythonTool(sampleTool);
 
     assert.ok(pyCode.includes("@mcp.tool()"));
-    assert.ok(pyCode.includes("def calculate_tax(subtotal: float, state_code: str, tax_exempt: bool = None) -> str:"));
+    assert.ok(
+      pyCode.includes(
+        "def calculate_tax(subtotal: float, state_code: str, tax_exempt: bool = None) -> str:",
+      ),
+    );
     assert.ok(pyCode.includes("Calculates federal and state sales tax"));
   });
 

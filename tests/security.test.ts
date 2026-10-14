@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFileSync, rmSync, existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe, after } from "node:test";
 import { AgentShieldMcpAuditor } from "../src/security.js";
@@ -20,7 +20,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 const apiKey = process.env.OPENAI_API_KEY;
 console.log("Starting server cleanly");
 `,
-    "utf8"
+    "utf8",
   );
 
   // Create vulnerable server file
@@ -44,7 +44,7 @@ export function readFileUnsafe(userPath: string) {
   return fs.readFileSync(\`/var/data/\${userPath}\`, "utf8");
 }
 `,
-    "utf8"
+    "utf8",
   );
 
   after(() => {

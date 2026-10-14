@@ -122,7 +122,12 @@ export type SecurityFindingSeverity = "critical" | "high" | "medium" | "low";
 
 export interface SecurityFinding {
   id: string;
-  type: "hardcoded_secret" | "command_injection" | "path_traversal" | "insecure_transport" | "wildcard_permission";
+  type:
+    | "hardcoded_secret"
+    | "command_injection"
+    | "path_traversal"
+    | "insecure_transport"
+    | "wildcard_permission";
   severity: SecurityFindingSeverity;
   file: string;
   line?: number;
@@ -161,4 +166,16 @@ export interface McpPackageResult {
   antigravityConfig: Record<string, unknown>;
   registryManifest: Record<string, unknown>;
   writtenFiles: string[];
+}
+
+export interface PremiumPackDefinition {
+  id: string;
+  name: string;
+  category: "database" | "devops" | "payments" | "all_access";
+  priceUsd: number;
+  type: "one_time" | "subscription";
+  description: string;
+  checkoutUrl: string;
+  features: string[];
+  sampleTools: string[];
 }

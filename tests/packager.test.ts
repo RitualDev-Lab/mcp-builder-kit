@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe, after } from "node:test";
 import { McpServerPackager } from "../src/packager.js";
@@ -34,7 +34,9 @@ describe("Phase 5: 1-Click Packaging, Dockerization & Directory Publishing Suite
     assert.ok(dockerfileContent.includes("EXPOSE 9000"));
 
     // Verify Claude Desktop config
-    const claudeContent = JSON.parse(readFileSync(join(tmpPkgDir, "claude_desktop_config.json"), "utf8"));
+    const claudeContent = JSON.parse(
+      readFileSync(join(tmpPkgDir, "claude_desktop_config.json"), "utf8"),
+    );
     assert.ok(claudeContent.mcpServers["weather-mcp"]);
     assert.strictEqual(claudeContent.mcpServers["weather-mcp"].command, "node");
     assert.ok(claudeContent.mcpServers["weather-mcp"].env.OPENWEATHER_API_KEY);

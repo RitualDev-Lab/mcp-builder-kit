@@ -1,8 +1,8 @@
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { McpProjectScaffolder } from "./scaffolder.js";
 import { McpCodeGenerator } from "./generator.js";
 import { OpenApiToMcpConverter } from "./openapi.js";
+import { McpProjectScaffolder } from "./scaffolder.js";
 import type { McpLanguage, McpTransport, ToolDefinition, ToolParameter } from "./types.js";
 
 function printHelp(): void {
@@ -16,6 +16,7 @@ Usage:
   mcp-builder inspect "<server-command>"
   mcp-builder audit [target-dir]
   mcp-builder package [target-dir] [options]
+  mcp-builder packs [list|install] [pack-id] [options]
   mcp-builder --help
   mcp-builder --version
 
@@ -26,6 +27,7 @@ Commands:
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
+  packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -83,7 +85,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         if (langVal === "typescript" || langVal === "python") {
           language = langVal;
         } else {
-          console.error(`❌ Error: Invalid language '${args[i + 1]}'. Choose 'typescript' or 'python'.`);
+          console.error(
+            `❌ Error: Invalid language '${args[i + 1]}'. Choose 'typescript' or 'python'.`,
+          );
           process.exit(1);
         }
         i++;
@@ -92,7 +96,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         if (transVal === "stdio" || transVal === "sse" || transVal === "both") {
           transport = transVal;
         } else {
-          console.error(`❌ Error: Invalid transport '${args[i + 1]}'. Choose 'stdio', 'sse', or 'both'.`);
+          console.error(
+            `❌ Error: Invalid transport '${args[i + 1]}'. Choose 'stdio', 'sse', or 'both'.`,
+          );
           process.exit(1);
         }
         i++;
@@ -172,7 +178,10 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
           if (pName) {
             const rawType = pType?.trim().toLowerCase();
             const validType =
-              rawType === "number" || rawType === "boolean" || rawType === "object" || rawType === "array"
+              rawType === "number" ||
+              rawType === "boolean" ||
+              rawType === "object" ||
+              rawType === "array"
                 ? rawType
                 : "string";
             parameters.push({
@@ -207,7 +216,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   if (command === "from-openapi") {
     const specPath = args[1];
     if (!specPath || specPath.startsWith("-")) {
-      console.error("❌ Error: Missing OpenAPI spec file path. Run: mcp-builder from-openapi <spec-path>");
+      console.error(
+        "❌ Error: Missing OpenAPI spec file path. Run: mcp-builder from-openapi <spec-path>",
+      );
       process.exit(1);
     }
 
@@ -258,7 +269,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   if (command === "inspect") {
     const targetCommand = args[1];
     if (!targetCommand || targetCommand.startsWith("-")) {
-      console.error("❌ Error: Missing server command. Run: mcp-builder inspect \"node ./dist/index.js\"");
+      console.error(
+        '❌ Error: Missing server command. Run: mcp-builder inspect "node ./dist/index.js"',
+      );
       process.exit(1);
     }
 
@@ -275,13 +288,19 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     try {
       const report = await inspector.inspect();
       console.log("\n================ MCP INSPECTION REPORT ================");
-      console.log(`Server:           ${report.serverInfo ? `${report.serverInfo.name} (v${report.serverInfo.version})` : "Anonymous"}`);
+      console.log(
+        `Server:           ${report.serverInfo ? `${report.serverInfo.name} (v${report.serverInfo.version})` : "Anonymous"}`,
+      );
       console.log(`Protocol Version: ${report.protocolVersion}`);
       console.log(`Latency:          ${report.latencyMs}ms`);
       console.log("\nCapabilities:");
       console.log(`   • Tools:     ${report.capabilities.tools ? "✅ Supported" : "❌ Disabled"}`);
-      console.log(`   • Resources: ${report.capabilities.resources ? "✅ Supported" : "❌ Disabled"}`);
-      console.log(`   • Prompts:   ${report.capabilities.prompts ? "✅ Supported" : "❌ Disabled"}`);
+      console.log(
+        `   • Resources: ${report.capabilities.resources ? "✅ Supported" : "❌ Disabled"}`,
+      );
+      console.log(
+        `   • Prompts:   ${report.capabilities.prompts ? "✅ Supported" : "❌ Disabled"}`,
+      );
 
       console.log("\nConformance Checks:");
       for (const check of report.conformanceChecks) {
@@ -314,11 +333,17 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log("================ AGENTSHIELD MCP AUDIT REPORT ================");
     console.log(`Target Directory:   ${report.targetDir}`);
     console.log(`Scanned Files:      ${report.scannedFilesCount}`);
-    console.log(`Security Score:     ${report.score} / 100 (${report.isSecure ? "✅ SECURE" : "⚠️ VULNERABLE"})`);
-    console.log(`Findings Summary:   Critical: ${report.summary.critical} | High: ${report.summary.high} | Medium: ${report.summary.medium} | Low: ${report.summary.low}`);
+    console.log(
+      `Security Score:     ${report.score} / 100 (${report.isSecure ? "✅ SECURE" : "⚠️ VULNERABLE"})`,
+    );
+    console.log(
+      `Findings Summary:   Critical: ${report.summary.critical} | High: ${report.summary.high} | Medium: ${report.summary.medium} | Low: ${report.summary.low}`,
+    );
 
     if (report.findings.length === 0) {
-      console.log("\n✨ 0 Vulnerabilities detected! Your MCP server conforms to Zero-Leak standards.\n");
+      console.log(
+        "\n✨ 0 Vulnerabilities detected! Your MCP server conforms to Zero-Leak standards.\n",
+      );
     } else {
       console.log("\nDetected Security Findings:");
       for (const f of report.findings) {
@@ -387,7 +412,78 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     return;
   }
 
-  console.error(`❌ Unknown command: '${command}'. Run 'mcp-builder --help' for available commands.`);
+  // 7. mcp-builder packs (Self-serve enterprise connectors via Dodo Payments)
+  if (command === "packs") {
+    const subCommand = args[1] || "list";
+    const { EnterprisePackManager } = await import("./packs.js");
+
+    if (subCommand === "list") {
+      const packs = EnterprisePackManager.getAvailablePacks();
+      console.log("\n💎 Enterprise MCP Connector Packs & Starters (Powered by Dodo Payments):");
+      console.log("========================================================================\n");
+
+      for (const p of packs) {
+        console.log(`📦 ${p.name} ($${p.priceUsd} ${p.type === "one_time" ? "one-time" : "/mo"})`);
+        console.log(`   ID:          ${p.id}`);
+        console.log(`   Description: ${p.description}`);
+        console.log("   Features:");
+        for (const feat of p.features) {
+          console.log(`     • ${feat}`);
+        }
+        console.log(`   🛒 Direct Checkout: ${p.checkoutUrl}`);
+        console.log(`   ⚡ Install preview:  mcp-builder packs install ${p.id}\n`);
+      }
+      console.log("========================================================================\n");
+      return;
+    }
+
+    if (subCommand === "install") {
+      const packId = args[2];
+      if (!packId) {
+        console.error("❌ Error: Missing pack ID. Run: mcp-builder packs install <pack-id>");
+        process.exit(1);
+      }
+
+      const targetDir = resolve(process.cwd(), args[3] || "./connectors");
+      let licenseKey: string | undefined;
+
+      for (let i = 4; i < args.length; i++) {
+        if (args[i] === "--license" && args[i + 1]) {
+          licenseKey = args[i + 1];
+          i++;
+        }
+      }
+
+      try {
+        const result = EnterprisePackManager.installPack(packId, targetDir, licenseKey);
+        console.log(`\n🎉 ${result.message}\n`);
+        console.log("Generated Connector Stubs:");
+        for (const f of result.filesCreated) {
+          console.log(`   + ${f}`);
+        }
+        if (result.checkoutUrl && !licenseKey) {
+          console.log(
+            "\n🛒 Complete instant self-serve checkout via Dodo Payments to unlock the full connector:",
+          );
+          console.log(`   👉 ${result.checkoutUrl}\n`);
+        }
+        return;
+      } catch (e: unknown) {
+        const errorMsg = e instanceof Error ? e.message : "Failed to install pack";
+        console.error(`❌ ${errorMsg}`);
+        process.exit(1);
+      }
+    }
+
+    console.error(
+      `❌ Unknown sub-command '${subCommand}'. Use 'mcp-builder packs list' or 'mcp-builder packs install <pack-id>'`,
+    );
+    process.exit(1);
+  }
+
+  console.error(
+    `❌ Unknown command: '${command}'. Run 'mcp-builder --help' for available commands.`,
+  );
   process.exit(1);
 }
 

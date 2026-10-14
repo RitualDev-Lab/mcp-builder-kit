@@ -1,4 +1,4 @@
-import type { ToolDefinition, ResourceDefinition, ToolParameter } from "./types.js";
+import type { ResourceDefinition, ToolDefinition, ToolParameter } from "./types.js";
 
 /**
  * Generates strongly typed MCP tool code and JSON Schemas for TypeScript and Python

@@ -1,10 +1,10 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import type {
+  McpDiscoveredResource,
+  McpDiscoveredTool,
   McpInspectionReport,
   McpJsonRpcRequest,
   McpJsonRpcResponse,
-  McpDiscoveredTool,
-  McpDiscoveredResource,
 } from "./types.js";
 
 export interface McpInspectorOptions {
@@ -77,7 +77,10 @@ export class McpServerInspector {
   /**
    * Dispatches a JSON-RPC request to the running MCP server
    */
-  public async sendRequest(method: string, params: Record<string, unknown> = {}): Promise<McpJsonRpcResponse> {
+  public async sendRequest(
+    method: string,
+    params: Record<string, unknown> = {},
+  ): Promise<McpJsonRpcResponse> {
     if (!this.childProcess || !this.childProcess.stdin.writable) {
       throw new Error("Cannot send request: MCP server process is not connected");
     }

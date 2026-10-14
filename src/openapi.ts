@@ -1,11 +1,11 @@
+import { McpCodeGenerator } from "./generator.js";
 import type {
   OpenApiConversionOptions,
   OpenApiConversionResult,
   ToolDefinition,
-  ToolParameter,
   ToolParamType,
+  ToolParameter,
 } from "./types.js";
-import { McpCodeGenerator } from "./generator.js";
 
 interface OpenApiEndpoint {
   path: string;
@@ -60,9 +60,15 @@ export class OpenApiToMcpConverter {
         }
 
         const endpoint = opObj as OpenApiEndpoint;
-        const toolName = OpenApiToMcpConverter.generateToolName(httpMethod, pathStr, endpoint.operationId);
+        const toolName = OpenApiToMcpConverter.generateToolName(
+          httpMethod,
+          pathStr,
+          endpoint.operationId,
+        );
         const description =
-          endpoint.summary || endpoint.description || `${httpMethod.toUpperCase()} request to ${pathStr}`;
+          endpoint.summary ||
+          endpoint.description ||
+          `${httpMethod.toUpperCase()} request to ${pathStr}`;
 
         const parameters: ToolParameter[] = [];
 

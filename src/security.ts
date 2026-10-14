@@ -1,6 +1,6 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { SecurityFinding, McpSecurityAuditReport } from "./types.js";
+import type { McpSecurityAuditReport, SecurityFinding } from "./types.js";
 
 /**
  * Built-in Secret Detection and High-Risk Pattern Signatures (Powered by AgentShield engine rules)
@@ -20,7 +20,8 @@ const SECURITY_RULES: PatternRule[] = [
     id: "SEC-001",
     type: "hardcoded_secret",
     severity: "critical",
-    regex: /(?:sk-[a-zA-Z0-9_-]{20,}|sk-ant-[a-zA-Z0-9_-]{20,}|AIzaSy[a-zA-Z0-9_-]{33}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{82})/,
+    regex:
+      /(?:sk-[a-zA-Z0-9_-]{20,}|sk-ant-[a-zA-Z0-9_-]{20,}|AIzaSy[a-zA-Z0-9_-]{33}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{82})/,
     description: "Detected hardcoded AI or Cloud API key in MCP server source code",
     remediation: "Read credentials from process.env or secret manager instead of source code",
   },
@@ -30,7 +31,8 @@ const SECURITY_RULES: PatternRule[] = [
     severity: "critical",
     regex: /(?:-----BEGIN (?:RSA |EC )?PRIVATE KEY-----)/,
     description: "Detected embedded cryptographic private key block",
-    remediation: "Load private keys dynamically from secure file path or vault environment variables",
+    remediation:
+      "Load private keys dynamically from secure file path or vault environment variables",
   },
   {
     id: "SEC-003",
@@ -45,9 +47,12 @@ const SECURITY_RULES: PatternRule[] = [
     id: "SEC-004",
     type: "command_injection",
     severity: "critical",
-    regex: /(?:exec\s*\(\s*`[^`]*\${|execSync\s*\(\s*`[^`]*\${|spawn\s*\([^,]+,\s*\{[^}]*shell:\s*true)/,
-    description: "Potentially unsafe command execution with unsanitized template interpolation or shell: true",
-    remediation: "Pass arguments as an array to spawn() without shell: true, or use AgentCommandSandbox",
+    regex:
+      /(?:exec\s*\(\s*`[^`]*\${|execSync\s*\(\s*`[^`]*\${|spawn\s*\([^,]+,\s*\{[^}]*shell:\s*true)/,
+    description:
+      "Potentially unsafe command execution with unsanitized template interpolation or shell: true",
+    remediation:
+      "Pass arguments as an array to spawn() without shell: true, or use AgentCommandSandbox",
   },
   {
     id: "SEC-005",
@@ -64,16 +69,19 @@ const SECURITY_RULES: PatternRule[] = [
     severity: "high",
     regex: /(?:readFileSync\s*\(\s*`[^`]*\${|fs\.promises\.readFile\s*\(\s*`[^`]*\${)/,
     description: "Dynamic file read with direct template string (risk of ../ directory traversal)",
-    remediation: "Validate path against an allowed base directory using path.resolve() and path.relative()",
+    remediation:
+      "Validate path against an allowed base directory using path.resolve() and path.relative()",
   },
   // 4. Insecure HTTP / Open SSE Bindings
   {
     id: "SEC-007",
     type: "insecure_transport",
     severity: "medium",
-    regex: /(?:http:\/\/localhost:\d+|http:\/\/0\.0\.0\.0:\d+|listen\s*\(\s*\d+\s*,\s*["']0\.0\.0\.0["'])/,
+    regex:
+      /(?:http:\/\/localhost:\d+|http:\/\/0\.0\.0\.0:\d+|listen\s*\(\s*\d+\s*,\s*["']0\.0\.0\.0["'])/,
     description: "MCP Server listens on 0.0.0.0 or unencrypted plaintext HTTP transport",
-    remediation: "Bind to 127.0.0.1 for local communication or terminate TLS/HTTPS for remote agents",
+    remediation:
+      "Bind to 127.0.0.1 for local communication or terminate TLS/HTTPS for remote agents",
   },
 ];
 
@@ -142,7 +150,9 @@ export class AgentShieldMcpAuditor {
   /**
    * Generates production AgentShield Zero-Leak parameter sanitizer middleware for MCP tools
    */
-  public static generateSanitizerMiddleware(language: "typescript" | "python" = "typescript"): string {
+  public static generateSanitizerMiddleware(
+    language: "typescript" | "python" = "typescript",
+  ): string {
     if (language === "typescript") {
       return `
 /**

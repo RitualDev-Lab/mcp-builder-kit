@@ -130,6 +130,27 @@ console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 
 ---
 
+## 💎 Enterprise MCP Connector Packs (Self-Serve via Dodo Payments)
+
+Accelerate production deployments with battle-tested, pre-built enterprise connectors featuring connection pooling, PII redaction, and IAM least-privilege scoping:
+
+| Pack | Focus | Highlights | Price | Checkout |
+| :--- | :--- | :--- | :---: | :---: |
+| **Enterprise Database Pack** | Postgres, MongoDB, ClickHouse, Redis | Connection pooling, AST read-only safety gate, sensitive column redaction | **$49** | [**Instant Checkout →**](https://checkout.dodopayments.com/buy/pdt_mcp_database_pack?quantity=1) |
+| **Cloud & DevOps Pack** | AWS, GCP, Docker, Kubernetes, GitHub | Pod log inspection, S3 presigned URLs, CI/CD dispatch, container lifecycle | **$49** | [**Instant Checkout →**](https://checkout.dodopayments.com/buy/pdt_mcp_devops_pack?quantity=1) |
+| **Fintech & SaaS Pack** | Stripe, Dodo Payments, Slack, HubSpot | Payment intents, webhook verification, CRM search, incident broadcast | **$39** | [**Instant Checkout →**](https://checkout.dodopayments.com/buy/pdt_mcp_fintech_pack?quantity=1) |
+| **All-Access Bundle** | All current & future packs | Lifetime updates, 25+ connectors, priority Discord engineering support | **$99** | [**Instant Checkout →**](https://checkout.dodopayments.com/buy/pdt_mcp_all_access?quantity=1) |
+
+```bash
+# Browse all packs in terminal
+npx @ritualdev_lab/mcp-builder-kit packs list
+
+# Install preview stubs or unlock with your enterprise license
+npx @ritualdev_lab/mcp-builder-kit packs install enterprise-database-pack
+```
+
+---
+
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
@@ -137,6 +158,7 @@ console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 - [x] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
 - [x] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation (`mcp-builder audit`)**
 - [x] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing (`mcp-builder package`)**
+- [x] **Phase 6: Enterprise Tool Starters & Self-Serve Dodo Payments Monetization (`mcp-builder packs`)**
 
 ---
 

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFileSync, rmSync, existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe, after } from "node:test";
 import { McpServerInspector } from "../src/inspector.js";

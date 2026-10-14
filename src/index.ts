@@ -5,5 +5,6 @@ export * from "./openapi.js";
 export * from "./inspector.js";
 export * from "./security.js";
 export * from "./packager.js";
+export * from "./packs.js";
 export * from "./templates/typescript.js";
 export * from "./templates/python.js";

@@ -27,9 +27,7 @@ export class McpServerPackager {
         [serverName]: {
           command: language === "typescript" ? "node" : "python",
           args: [
-            language === "typescript"
-              ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}`
-              : "-m",
+            language === "typescript" ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}` : "-m",
             language === "typescript" ? "" : `${serverName.replace(/-/g, "_")}.server`,
           ].filter(Boolean),
           env: Object.fromEntries(envVars.map((k) => [k, `YOUR_${k}_HERE`])),
@@ -42,9 +40,7 @@ export class McpServerPackager {
         [serverName]: {
           command: language === "typescript" ? "node" : "python",
           args: [
-            language === "typescript"
-              ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}`
-              : "-m",
+            language === "typescript" ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}` : "-m",
             language === "typescript" ? "" : `${serverName.replace(/-/g, "_")}.server`,
           ].filter(Boolean),
         },
@@ -56,9 +52,7 @@ export class McpServerPackager {
         [serverName]: {
           command: language === "typescript" ? "node" : "python",
           args: [
-            language === "typescript"
-              ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}`
-              : "-m",
+            language === "typescript" ? `${targetDir.replace(/\\/g, "/")}/${nodeEntry}` : "-m",
             language === "typescript" ? "" : `${serverName.replace(/-/g, "_")}.server`,
           ].filter(Boolean),
         },
