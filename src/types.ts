@@ -232,3 +232,33 @@ export interface TurnkeyInquiryResult {
   consultationUrl: string;
   intakeSummaryMarkdown: string;
 }
+
+export interface FoundationGrantProgram {
+  id: string;
+  name: string;
+  organization: string;
+  grantRangeUsd: string;
+  focusArea: string;
+  applicationUrl: string;
+  requirements: string[];
+  recommendedPitch: string;
+}
+
+export interface OpenSourceBountyItem {
+  id: string;
+  title: string;
+  rewardUsd: number;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  category: "security" | "connector" | "testing" | "documentation";
+  description: string;
+  claimUrl: string;
+  sponsor: string;
+}
+
+export interface GrantsAndBountiesCatalog {
+  grants: FoundationGrantProgram[];
+  bounties: OpenSourceBountyItem[];
+  githubSponsorsUrl: string;
+  polarBountiesUrl: string;
+}
+

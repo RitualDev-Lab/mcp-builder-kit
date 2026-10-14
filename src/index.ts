@@ -9,5 +9,6 @@ export * from "./packs.js";
 export * from "./badge.js";
 export * from "./spotlight.js";
 export * from "./turnkey.js";
+export * from "./grants.js";
 export * from "./templates/typescript.js";
 export * from "./templates/python.js";

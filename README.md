@@ -206,6 +206,38 @@ npx @ritualdev_lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQue
 
 ---
 
+## 🏛️ Stream 5: Foundation Grants & Open-Source Bounties ($1,000 – $25,000+)
+
+`mcp-builder-kit` operates with dual-engine sustainability: commercial enterprise tooling paired with open-source foundation grants, ecosystem rounds, and funded contributor bounties.
+
+### Active Ecosystem Grant Targets
+
+| Program | Organization | Target Range | Focus & Eligibility | Grant Portal |
+| :--- | :--- | :---: | :--- | :---: |
+| **Anthropic MCP Ecosystem Fund** | Anthropic / Claude Builder Collective | **$5,000 – $25,000** | Open-standard protocol developer tooling, AgentShield zero-leak sandbox security | [**Apply via Anthropic →**](https://www.anthropic.com/programs) |
+| **Gitcoin AI Infrastructure** | Gitcoin / Open Civics | **$2,500 – $15,000** | Decentralized agent building blocks, verifiable commits, multi-language tooling | [**View on Gitcoin →**](https://grants.gitcoin.co) |
+| **GitHub Open Source AI Grants** | GitHub / Microsoft for Startups | **$5,000 – $20,000** | Native IDE integrations (Cursor/Copilot), SLSA Level 3 supply-chain security | [**View GitHub Accelerator →**](https://accelerator.github.com) |
+
+### Active Contributor Bounties (Earn $650 – $1,500 via Polar.sh)
+
+| Bounty Task | Reward | Difficulty | Claim Link |
+| :--- | :---: | :---: | :---: |
+| **Rust rmcp / FastMCP Native Server Generator** | **$1,200** | Advanced | [**Claim on Polar.sh #1 →**](https://polar.sh/RitualDev-Lab/mcp-builder-kit/issues/1) |
+| **Wasm Micro-Sandbox for Untrusted Tools (AgentShield)** | **$1,500** | Advanced | [**Claim on Polar.sh #2 →**](https://polar.sh/RitualDev-Lab/mcp-builder-kit/issues/2) |
+| **GraphQL Schema to MCP Tools & Resources Auto-Mapper** | **$800** | Intermediate | [**Claim on Polar.sh #3 →**](https://polar.sh/RitualDev-Lab/mcp-builder-kit/issues/3) |
+| **Interactive Web UI for Mock Inspector (SSE & stdio)** | **$650** | Intermediate | [**Claim on Polar.sh #4 →**](https://polar.sh/RitualDev-Lab/mcp-builder-kit/issues/4) |
+
+```bash
+# Browse active grant programs or generate tailored grant pitch
+npx @ritualdev_lab/mcp-builder-kit grants
+npx @ritualdev_lab/mcp-builder-kit grants anthropic-alignment-ecosystem
+
+# Browse funded open-source bounties
+npx @ritualdev_lab/mcp-builder-kit bounties
+```
+
+---
+
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
@@ -216,6 +248,7 @@ npx @ritualdev_lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQue
 - [x] **Phase 6: Enterprise Tool Starters & Self-Serve Dodo Payments Monetization (`mcp-builder packs`)**
 - [x] **Phase 7: Verified Secure Server Badges & DevShelf Directory Spotlight (`mcp-builder badge`, `mcp-builder spotlight`)**
 - [x] **Phase 8: B2B Turnkey Custom MCP Server Development & Inquiries (`mcp-builder turnkey`)**
+- [x] **Phase 9: Foundation Ecosystem Grants & Polar.sh Contributor Bounties (`mcp-builder grants`, `mcp-builder bounties`)**
 
 ---
 

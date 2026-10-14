@@ -26,6 +26,8 @@ Usage:
   mcp-builder badge <server-name> [options]
   mcp-builder spotlight [server-name] [options]
   mcp-builder turnkey [starter|pro|enterprise] [options]
+  mcp-builder grants [grant-id]
+  mcp-builder bounties
   mcp-builder --help
   mcp-builder --version
 
@@ -40,6 +42,8 @@ Commands:
   badge <server-name>      Generates cryptographically verified AgentShield badge & checkout URL
   spotlight <server-name>  Generates DevShelf Featured Spotlight placement and Dodo checkout link
   turnkey [tier]           Initiates B2B turnkey custom MCP server development inquiry & deposit link
+  grants [id]              Browse foundation ecosystem grants ($1k-$25k) and generate grant pitch
+  bounties                 Browse funded open-source bounties with Polar.sh rewards
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -629,6 +633,52 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log(`👉 ${inquiry.depositCheckoutUrl}`);
     console.log("\n📅 Architecture Discovery Booking:");
     console.log(`👉 ${inquiry.consultationUrl}\n`);
+    console.log("========================================================================\n");
+    return;
+  }
+
+  if (command === "grants") {
+    const grantId = args[1];
+    const { GrantsAndBountiesService } = await import("./grants.js");
+
+    if (grantId) {
+      const pitch = GrantsAndBountiesService.generatePitchSummary(grantId);
+      console.log("\n========================================================================");
+      console.log(pitch);
+      console.log("========================================================================\n");
+      return;
+    }
+
+    const grants = GrantsAndBountiesService.getGrants();
+    console.log("\n🏛️ Active Open-Source & AI Foundation Grant Programs ($1k - $25k+):");
+    console.log("========================================================================\n");
+    for (const g of grants) {
+      console.log(`• ${g.name} (${g.organization})`);
+      console.log(`  Funding Range:  ${g.grantRangeUsd}`);
+      console.log(`  Focus Area:     ${g.focusArea}`);
+      console.log(`  Application:    👉 ${g.applicationUrl}\n`);
+    }
+    console.log("Tip: Run 'mcp-builder grants <grant-id>' to generate a targeted narrative pitch.\n");
+    console.log("========================================================================\n");
+    return;
+  }
+
+  if (command === "bounties") {
+    const { GrantsAndBountiesService } = await import("./grants.js");
+    const catalog = GrantsAndBountiesService.getCatalog();
+
+    console.log("\n💰 Active Open-Source Developer Bounties & Community Rewards:");
+    console.log("========================================================================\n");
+    for (const b of catalog.bounties) {
+      console.log(`• [${b.difficulty.toUpperCase()}] ${b.title} — $${b.rewardUsd.toLocaleString()}`);
+      console.log(`  Category:    ${b.category} | Sponsor: ${b.sponsor}`);
+      console.log(`  Summary:     ${b.description}`);
+      console.log(`  Claim Issue: 👉 ${b.claimUrl}\n`);
+    }
+    console.log("💜 GitHub Sponsors:");
+    console.log(`👉 ${catalog.githubSponsorsUrl}`);
+    console.log("\n⚡ Polar.sh Contributor Bounties:");
+    console.log(`👉 ${catalog.polarBountiesUrl}\n`);
     console.log("========================================================================\n");
     return;
   }
