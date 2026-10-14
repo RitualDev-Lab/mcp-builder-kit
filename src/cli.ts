@@ -61,9 +61,9 @@ Options for 'from-openapi':
   --lang, -l               Output language: 'typescript' (default) or 'python'
 
 Examples:
-  npx @ritualdev_lab/mcp-builder-kit init my-sqlite-server
-  npx @ritualdev_lab/mcp-builder-kit add-tool search_documents --desc "Searches internal knowledge" --params "query:string,limit:number"
-  npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+  npx @ritualdev-lab/mcp-builder-kit init my-sqlite-server
+  npx @ritualdev-lab/mcp-builder-kit add-tool search_documents --desc "Searches internal knowledge" --params "query:string,limit:number"
+  npx @ritualdev-lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 `);
 }
 
@@ -373,7 +373,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       );
       const serverSlug = targetDir.split(/[\\/]/).pop() || "my-mcp-server";
       console.log(`\n🏆 Claim your Official "Verified Secure MCP Server" Badge & Certification:`);
-      console.log(`   👉 Run: npx @ritualdev_lab/mcp-builder-kit badge ${serverSlug}\n`);
+      console.log(`   👉 Run: npx @ritualdev-lab/mcp-builder-kit badge ${serverSlug}\n`);
     } else {
       console.log("\nDetected Security Findings:");
       for (const f of report.findings) {
