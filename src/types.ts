@@ -144,3 +144,21 @@ export interface McpSecurityAuditReport {
     low: number;
   };
 }
+
+export interface McpPackageOptions {
+  serverName: string;
+  targetDir: string;
+  language?: McpLanguage;
+  entrypoint?: string;
+  port?: number;
+  envVars?: string[];
+}
+
+export interface McpPackageResult {
+  dockerfile: string;
+  claudeDesktopConfig: Record<string, unknown>;
+  cursorConfig: Record<string, unknown>;
+  antigravityConfig: Record<string, unknown>;
+  registryManifest: Record<string, unknown>;
+  writtenFiles: string[];
+}

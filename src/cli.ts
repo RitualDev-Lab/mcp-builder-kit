@@ -15,6 +15,7 @@ Usage:
   mcp-builder from-openapi <openapi-spec-path> [options]
   mcp-builder inspect "<server-command>"
   mcp-builder audit [target-dir]
+  mcp-builder package [target-dir] [options]
   mcp-builder --help
   mcp-builder --version
 
@@ -24,6 +25,7 @@ Commands:
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
+  package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -328,11 +330,60 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         console.log(`   Fix:    ${f.remediation}`);
       }
     }
-    console.log("==============================================================\n");
-
     if (!report.isSecure) {
       process.exit(1);
     }
+    return;
+  }
+
+  // 6. mcp-builder package
+  if (command === "package") {
+    const targetDir = resolve(process.cwd(), args[1] || ".");
+    let language: McpLanguage = "typescript";
+    let port = 8080;
+    const envVars: string[] = [];
+
+    for (let i = 2; i < args.length; i++) {
+      const arg = args[i];
+      if ((arg === "--lang" || arg === "-l") && args[i + 1]) {
+        const langVal = args[i + 1].toLowerCase();
+        if (langVal === "typescript" || langVal === "python") {
+          language = langVal;
+        }
+        i++;
+      } else if (arg === "--port" && args[i + 1]) {
+        port = Number.parseInt(args[i + 1], 10) || 8080;
+        i++;
+      } else if (arg === "--env" && args[i + 1]) {
+        envVars.push(...args[i + 1].split(",").map((s) => s.trim()));
+        i++;
+      }
+    }
+
+    const serverName = targetDir.split(/[\\/]/).pop() || "my-mcp-server";
+    console.log(`\n📦 Packaging MCP Server: ${serverName} (${language})`);
+    console.log(`   • Target Directory: ${targetDir}`);
+    console.log(`   • Port:             ${port}\n`);
+
+    const { McpServerPackager } = await import("./packager.js");
+    const result = McpServerPackager.package({
+      serverName,
+      targetDir,
+      language,
+      port,
+      envVars,
+    });
+
+    console.log("✅ Successfully generated configuration & container artifacts:");
+    for (const f of result.writtenFiles) {
+      console.log(`   + ${f}`);
+    }
+
+    console.log("\n📋 Sample Claude Desktop Configuration (claude_desktop_config.json):");
+    console.log(JSON.stringify(result.claudeDesktopConfig, null, 2));
+
+    console.log("\n🐳 Multi-arch Docker build command:");
+    console.log(`   docker build -t ${serverName}:latest ${targetDir}\n`);
     return;
   }
 

@@ -50,10 +50,10 @@ npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
 npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 ```
 
-### 6. AgentShield Security Audit & Vulnerability Scan
+### 7. 1-Click Packaging & Containerization
 ```bash
-# Scan server source code for hardcoded API keys, shell injection, and traversal bugs
-npx @ritualdev_lab/mcp-builder-kit audit ./my-server
+# Generate Dockerfile, Claude Desktop config, Cursor config, and mcp.json registry manifest
+npx @ritualdev_lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
 ```
 
 ---
@@ -67,18 +67,7 @@ Commands:
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
-
-Options for 'init':
-  --lang, -l               Language: 'typescript' (default) or 'python'
-  --transport, -t          Transport: 'stdio' (default), 'sse', or 'both'
-  --dir, -d                Target directory (defaults to ./<project-name>)
-  --desc                   Short project description
-  --author                 Author or organization name
-
-Options for 'add-tool':
-  --lang, -l               Output language: 'typescript' (default) or 'python'
-  --desc                   Tool description
-  --params                 Comma-separated list of paramName:type (e.g. "query:string,limit:number")
+  package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
 ```
 
 ---
@@ -92,6 +81,7 @@ import {
   OpenApiToMcpConverter,
   McpServerInspector,
   AgentShieldMcpAuditor,
+  McpServerPackager,
 } from "@ritualdev_lab/mcp-builder-kit";
 
 // 1. Scaffold a project
@@ -127,6 +117,15 @@ console.log(`Discovered ${report.discoveredTools.length} tools, latency: ${repor
 // 5. AgentShield Pre-Flight Security Audit
 const audit = AgentShieldMcpAuditor.auditDirectory("./src");
 console.log(`Security Score: ${audit.score}/100, isSecure: ${audit.isSecure}`);
+
+// 6. 1-Click Packaging & Dockerization
+const pkg = McpServerPackager.package({
+  serverName: "sqlite-explorer",
+  targetDir: "./servers/sqlite-explorer",
+  language: "typescript",
+  port: 8080,
+});
+console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 ```
 
 ---
@@ -137,7 +136,7 @@ console.log(`Security Score: ${audit.score}/100, isSecure: ${audit.isSecure}`);
 - [x] **Phase 2: Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`)**
 - [x] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
 - [x] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation (`mcp-builder audit`)**
-- [ ] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing**
+- [x] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing (`mcp-builder package`)**
 
 ---
 
