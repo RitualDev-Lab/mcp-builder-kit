@@ -2,6 +2,7 @@
   <img src="https://img.shields.io/badge/MCP-Model%20Context%20Protocol-8b5cf6?style=for-the-badge&logo=anthropic&logoColor=white" alt="MCP" />
   <img src="https://img.shields.io/badge/TypeScript-Ready-3178c6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Python-FastMCP-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/actions/workflows/test.yml"><img src="https://github.com/RitualDev-Lab/mcp-builder-kit/actions/workflows/test.yml/badge.svg" alt="CI Tests" /></a>
   <img src="https://img.shields.io/badge/License-Apache--2.0-blue?style=for-the-badge" alt="License" />
 </p>
 
@@ -152,11 +153,11 @@ console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 
 `mcp-builder-kit` is open-source under Apache-2.0, with enterprise extensions, verified security certifications, and custom development available for production teams:
 
-- **Enterprise Connector Starters ($39 – $99)**: Pre-built connectors for Postgres, Kubernetes, Stripe, and AWS with connection pooling and PII redaction (`mcp-builder packs`).
-- **Verified Server Certification ($29 – $79)**: Cryptographic AgentShield zero-leak audit badges verified against repository commits (`mcp-builder badge`).
-- **DevShelf Directory Spotlight ($49 – $149/mo)**: Promoted directory placement and developer showcase across 15,000+ AI builders (`mcp-builder spotlight`).
-- **Turnkey B2B Engineering ($500 – $3,500)**: Bespoke production MCP server engineering, private VPC networking, and SLA guarantees (`mcp-builder turnkey`).
-- **Foundation Grants & Polar Bounties**: Open-source ecosystem grant alignment and funded developer bounties (`mcp-builder grants`, `mcp-builder bounties`).
+- **Enterprise Connector Starters ($49)**: Pre-built production connectors for Postgres, Kubernetes, Stripe, and AWS with connection pooling and PII redaction (`npx @ritualdev-lab/mcp-builder-kit packs`).
+- **Verified Server Certification & Spotlight ($79)**: Cryptographic AgentShield zero-leak audit badge verified against repository commits, bundled with DevShelf directory showcase (`npx @ritualdev-lab/mcp-builder-kit badge <name>`).
+- **DevShelf Directory Spotlight ($149/mo)**: Standalone high-visibility directory placement and developer showcase across AI builders (`npx @ritualdev-lab/mcp-builder-kit spotlight <name>`).
+- **Turnkey B2B Engineering (From $1,750)**: Bespoke production MCP server engineering, private VPC networking, and SLA guarantees (`npx @ritualdev-lab/mcp-builder-kit turnkey starter`).
+- **Ecosystem Grants & Bounties**: Connect to open-source foundation grant programs you can apply to ($1k–$25k) and funded developer bounties (`npx @ritualdev-lab/mcp-builder-kit grants`, `npx @ritualdev-lab/mcp-builder-kit bounties`).
 
 👉 **Explore full feature matrices and self-serve checkout at [mcp.ritualdev.in](https://mcp.ritualdev.in)**
 

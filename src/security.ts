@@ -119,16 +119,23 @@ export class AgentShieldMcpAuditor {
             }
           }
 
-          // Shannon Entropy Analysis: Detect high-entropy API keys and tokens (> 4.4 bits/char)
-          const tokenMatches = line.match(/(?:['"`])([a-zA-Z0-9+/=_-]{28,120})(?:['"`])/g);
+          // Shannon Entropy Analysis: Adaptive entropy threshold for API keys and tokens
+          // Pure hex strings (0-9, a-f) top out at 4.0 bits -> threshold 3.2 bits (min length 16)
+          // Base64/alphanumeric strings -> threshold >= 4.4 bits (min length 20)
+          const tokenMatches = line.match(/(?:['"`])([a-zA-Z0-9+/=_-]{16,120})(?:['"`])/g);
           if (tokenMatches) {
             for (const t of tokenMatches) {
               const rawStr = t.slice(1, -1);
               if (rawStr.startsWith("http://") || rawStr.startsWith("https://") || rawStr.includes(" ")) {
                 continue;
               }
+              const isPureHex = /^[0-9a-fA-F]+$/.test(rawStr);
               const entropy = AgentShieldMcpAuditor.calculateEntropy(rawStr);
-              if (entropy >= 4.4) {
+              const isSecret = isPureHex
+                ? rawStr.length >= 16 && entropy >= 3.2
+                : rawStr.length >= 20 && entropy >= 4.4;
+
+              if (isSecret) {
                 const alreadyCaptured = findings.some(
                   (f) => f.file === relPath.replace(/\\/g, "/") && f.line === lineIdx + 1,
                 );
@@ -140,7 +147,7 @@ export class AgentShieldMcpAuditor {
                     file: relPath.replace(/\\/g, "/"),
                     line: lineIdx + 1,
                     snippet: line.trim().slice(0, 80),
-                    description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)})`,
+                    description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)}${isPureHex ? " [hex]" : ""})`,
                     remediation: "Move high-entropy API key or token to process.env or a secret vault",
                   });
                 }
