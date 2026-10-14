@@ -61,9 +61,9 @@ Options for 'from-openapi':
   --lang, -l               Output language: 'typescript' (default) or 'python'
 
 Examples:
-  npx @ritualdev_lab/mcp-builder-kit init my-sqlite-server
-  npx @ritualdev_lab/mcp-builder-kit add-tool search_documents --desc "Searches internal knowledge" --params "query:string,limit:number"
-  npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+  npx @ritualdev-lab/mcp-builder-kit init my-sqlite-server
+  npx @ritualdev-lab/mcp-builder-kit add-tool search_documents --desc "Searches internal knowledge" --params "query:string,limit:number"
+  npx @ritualdev-lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 `);
 }
 
@@ -190,20 +190,31 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       } else if (arg === "--params" && args[i + 1]) {
         const parts = args[i + 1].split(",");
         for (const p of parts) {
-          const [pName, pType] = p.split(":");
-          if (pName) {
-            const rawType = pType?.trim().toLowerCase();
+          const [pNameRaw, pTypeRaw] = p.split(":");
+          if (pNameRaw) {
+            let pName = pNameRaw.trim();
+            let isRequired = true;
+            if (pName.endsWith("?")) {
+              pName = pName.slice(0, -1);
+              isRequired = false;
+            }
+            const rawType = pTypeRaw?.trim().toLowerCase();
+            const isOptionalType = rawType?.includes("optional") || rawType?.endsWith("?");
+            if (isOptionalType) {
+              isRequired = false;
+            }
+            const cleanType = rawType?.replace(/[\s?]|optional/g, "");
             const validType =
-              rawType === "number" ||
-              rawType === "boolean" ||
-              rawType === "object" ||
-              rawType === "array"
-                ? rawType
+              cleanType === "number" ||
+              cleanType === "boolean" ||
+              cleanType === "object" ||
+              cleanType === "array"
+                ? cleanType
                 : "string";
             parameters.push({
-              name: pName.trim(),
+              name: pName,
               type: validType,
-              required: true,
+              required: isRequired,
             });
           }
         }

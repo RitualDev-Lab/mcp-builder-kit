@@ -133,9 +133,10 @@ export class AgentShieldMcpAuditor {
 
     // Calculate score out of 100
     const deductions =
-      summary.critical * 30 + summary.high * 15 + summary.medium * 5 + summary.low * 2;
+      summary.critical * 30 + summary.high * 15 + summary.medium * 8 + summary.low * 2;
     const score = Math.max(0, 100 - deductions);
-    const isSecure = summary.critical === 0 && summary.high === 0;
+    // Zero-Leak certification strictly requires 0 critical, 0 high, and 0 medium security violations
+    const isSecure = summary.critical === 0 && summary.high === 0 && summary.medium === 0;
 
     return {
       targetDir,
@@ -158,15 +159,26 @@ export class AgentShieldMcpAuditor {
 /**
  * AgentShield Zero-Leak Parameter & Path Sanitizer Middleware
  */
-export function sanitizeMcpParam<T>(param: T): T {
+import { resolve, normalize, isAbsolute } from "node:path";
+
+export function sanitizeMcpParam<T>(param: T, options?: { allowAbsolute?: boolean; baseDir?: string }): T {
   if (typeof param === "string") {
-    // Prevent directory traversal escapes
-    if (param.includes("../") || param.includes("..\\\\")) {
+    // 1. Check for command chaining and shell evaluation hazards
+    if (/(?:[;&|$\`><]|\\b(?:sh|bash|zsh|powershell|cmd)\\b)/i.test(param)) {
+      throw new Error("Security Violation: Unsafe shell meta-characters detected in MCP tool arguments");
+    }
+    // 2. Prevent path traversal escapes
+    if (/(?:\\.\\.[\\/\\\\]|%2e%2e|\\.\\.%2f|%2e%2e%2f)/i.test(param)) {
       throw new Error("Security Violation: Path traversal escape sequence blocked by AgentShield");
     }
-    // Prevent command injection characters in path / tool arguments
-    if (/[;&|$\`><]/.test(param)) {
-      throw new Error("Security Violation: Unsafe shell meta-characters detected in MCP tool arguments");
+    // 3. Prevent unvalidated absolute paths when restricted to baseDir
+    if (options?.baseDir) {
+      const resolved = resolve(options.baseDir, param);
+      if (!resolved.startsWith(normalize(options.baseDir))) {
+        throw new Error("Security Violation: Path escapes designated MCP sandbox root directory");
+      }
+    } else if (options?.allowAbsolute === false && isAbsolute(param)) {
+      throw new Error("Security Violation: Absolute file paths are disabled in this MCP tool");
     }
   }
   return param;
@@ -176,14 +188,21 @@ export function sanitizeMcpParam<T>(param: T): T {
 
     return `
 # AgentShield Zero-Leak Parameter & Path Sanitizer Middleware
+import os
 import re
 
-def sanitize_mcp_param(param):
+def sanitize_mcp_param(param, allow_absolute=True, base_dir=None):
     if isinstance(param, str):
-        if "../" in param or "..\\\\" in param:
+        if re.search(r"(?:[;&|$\`><]|\\b(?:sh|bash|zsh|powershell|cmd)\\b)", param, re.IGNORECASE):
+            raise ValueError("Security Violation: Unsafe shell execution characters detected in MCP parameter")
+        if re.search(r"(?:\\.\\.[\\/\\\\]|%2e%2e|\\.\\.%2f|%2e%2e%2f)", param, re.IGNORECASE):
             raise ValueError("Security Violation: Path traversal escape sequence blocked by AgentShield")
-        if re.search(r"[;&|$\`><]", param):
-            raise ValueError("Security Violation: Unsafe shell meta-characters detected in MCP tool arguments")
+        if base_dir:
+            resolved = os.path.abspath(os.path.join(base_dir, param))
+            if not resolved.startswith(os.path.abspath(base_dir)):
+                raise ValueError("Security Violation: Path escapes designated MCP sandbox root directory")
+        elif not allow_absolute and os.path.isabs(param):
+            raise ValueError("Security Violation: Absolute file paths are disabled in this MCP tool")
     return param
 `.trim();
   }

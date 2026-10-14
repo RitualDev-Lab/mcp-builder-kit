@@ -50,8 +50,12 @@ export class McpServerInspector {
           this.handleStdoutData(data.toString("utf8"));
         });
 
-        this.childProcess.stderr.on("data", (_data: Buffer) => {
-          // MCP servers log operational messages to stderr
+        this.childProcess.stderr.on("data", (data: Buffer) => {
+          const text = data.toString("utf8");
+          // Surface critical errors or store for diagnostic inspections
+          if (process.env.MCP_INSPECTOR_VERBOSE) {
+            process.stderr.write(`[MCP Server stderr]: ${text}`);
+          }
         });
 
         this.childProcess.on("error", (err) => {
@@ -66,12 +70,28 @@ export class McpServerInspector {
           this.pendingRequests.clear();
         });
 
-        resolve();
+        // Ensure child process is spawned and event loop tick has settled
+        setTimeout(resolve, 50);
       } catch (e: unknown) {
         const errorMsg = e instanceof Error ? e.message : "Failed to spawn process";
         reject(new Error(errorMsg));
       }
     });
+  }
+
+  /**
+   * Sends an asynchronous JSON-RPC notification (no id, no response expected)
+   */
+  public sendNotification(method: string, params: Record<string, unknown> = {}): void {
+    if (!this.childProcess || !this.childProcess.stdin.writable) {
+      return;
+    }
+    const notification = {
+      jsonrpc: "2.0",
+      method,
+      params,
+    };
+    this.childProcess.stdin.write(`${JSON.stringify(notification)}\n`);
   }
 
   /**
@@ -142,6 +162,9 @@ export class McpServerInspector {
             details: "Responded with valid JSON-RPC 2.0 handshake",
           });
 
+          // Conformance requirement: Client must notify server that initialization is complete
+          this.sendNotification("notifications/initialized", {});
+
           const result = initRes.result as {
             protocolVersion?: string;
             serverInfo?: { name: string; version: string };
@@ -191,30 +214,38 @@ export class McpServerInspector {
       }
 
       // 3. Discover Resources (resources/list)
-      try {
-        const resRes = await this.sendRequest("resources/list", {});
-        if (!resRes.error && resRes.result) {
-          const list = (resRes.result as { resources?: McpDiscoveredResource[] }).resources || [];
-          for (const r of list) {
-            discoveredResources.push(r);
+      if (capabilities.resources) {
+        try {
+          const resRes = await this.sendRequest("resources/list", {});
+          if (!resRes.error && resRes.result) {
+            const list = (resRes.result as { resources?: McpDiscoveredResource[] }).resources || [];
+            for (const r of list) {
+              discoveredResources.push(r);
+            }
+            conformanceChecks.push({
+              name: "Resource Discovery ('resources/list')",
+              passed: true,
+              details: `Successfully discovered ${discoveredResources.length} resources`,
+            });
+          } else {
+            conformanceChecks.push({
+              name: "Resource Discovery ('resources/list')",
+              passed: false,
+              details: resRes.error?.message || "Resources advertised in capabilities but resources/list failed",
+            });
           }
+        } catch (err: unknown) {
           conformanceChecks.push({
             name: "Resource Discovery ('resources/list')",
-            passed: true,
-            details: `Successfully discovered ${discoveredResources.length} resources`,
-          });
-        } else {
-          conformanceChecks.push({
-            name: "Resource Discovery ('resources/list')",
-            passed: true,
-            details: "No resources advertised (optional)",
+            passed: false,
+            details: err instanceof Error ? err.message : "resources/list failed",
           });
         }
-      } catch {
+      } else {
         conformanceChecks.push({
           name: "Resource Discovery ('resources/list')",
           passed: true,
-          details: "Resources capability optional",
+          details: "Resource capability not advertised (skipped)",
         });
       }
 

@@ -85,17 +85,22 @@ export class OpenApiToMcpConverter {
           }
         }
 
-        // Parse requestBody JSON properties
+        // Parse requestBody JSON properties with recursive $ref resolution
         const jsonContent = endpoint.requestBody?.content?.["application/json"];
-        if (jsonContent?.schema?.properties) {
-          const requiredSet = new Set(jsonContent.schema.required || []);
-          for (const [propName, propSchema] of Object.entries(jsonContent.schema.properties)) {
-            parameters.push({
-              name: propName,
-              type: OpenApiToMcpConverter.normalizeType(propSchema.type),
-              description: propSchema.description || "Body field",
-              required: requiredSet.has(propName),
-            });
+        if (jsonContent?.schema) {
+          const resolvedSchema = OpenApiToMcpConverter.resolveSchema(jsonContent.schema, spec);
+          if (resolvedSchema?.properties) {
+            const reqList = Array.isArray(resolvedSchema.required) ? resolvedSchema.required : [];
+            const requiredSet = new Set(reqList);
+            for (const [propName, propSchemaRaw] of Object.entries(resolvedSchema.properties as Record<string, unknown>)) {
+              const propSchema = OpenApiToMcpConverter.resolveSchema(propSchemaRaw as Record<string, unknown>, spec);
+              parameters.push({
+                name: propName,
+                type: OpenApiToMcpConverter.normalizeType(propSchema.type as string),
+                description: (propSchema.description as string) || "Body field",
+                required: requiredSet.has(propName),
+              });
+            }
           }
         }
 
@@ -120,6 +125,34 @@ export class OpenApiToMcpConverter {
     };
   }
 
+  /**
+   * Resolves $ref pointers (e.g. #/components/schemas/Pet) against the root specification
+   */
+  public static resolveSchema(
+    schema: Record<string, unknown>,
+    rootSpec: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (!schema || typeof schema !== "object") return {};
+    if (typeof schema.$ref === "string") {
+      const refPath = schema.$ref;
+      if (refPath.startsWith("#/")) {
+        const parts = refPath.replace("#/", "").split("/");
+        let current: unknown = rootSpec;
+        for (const part of parts) {
+          if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
+            current = (current as Record<string, unknown>)[part];
+          } else {
+            return schema;
+          }
+        }
+        if (current && typeof current === "object") {
+          return OpenApiToMcpConverter.resolveSchema(current as Record<string, unknown>, rootSpec);
+        }
+      }
+    }
+    return schema;
+  }
+
   private static generateToolName(method: string, path: string, operationId?: string): string {
     if (operationId) {
       return operationId.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
@@ -142,3 +175,4 @@ export class OpenApiToMcpConverter {
     return "string";
   }
 }
+

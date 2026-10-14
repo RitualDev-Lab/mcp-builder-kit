@@ -38,30 +38,40 @@
 
 ### 1. Scaffold a TypeScript MCP Server
 ```bash
-npx @ritualdev_lab/mcp-builder-kit init my-tools-server
+npx @ritualdev-lab/mcp-builder-kit init my-tools-server
 ```
 
 ### 2. Scaffold a Python FastMCP Server
 ```bash
-npx @ritualdev_lab/mcp-builder-kit init my-tools-server --lang python
+npx @ritualdev-lab/mcp-builder-kit init my-tools-server --lang python
 ```
 
 ### 3. Add a New Typed Tool to Your MCP Server
 ```bash
-npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
+npx @ritualdev-lab/mcp-builder-kit add-tool search_knowledge \
   --desc "Search vector store for relevant documentation" \
   --params "query:string,limit:number,filter:object"
 ```
 
 ### 4. Convert OpenAPI / Swagger Spec into MCP Tools
 ```bash
-npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+npx @ritualdev-lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+```
+
+### 5. Automated Protocol Conformance Inspection (CI/CD)
+```bash
+npx @ritualdev-lab/mcp-builder-kit inspect "node dist/index.js"
+```
+
+### 6. Pre-Flight Security & Injection Audit
+```bash
+npx @ritualdev-lab/mcp-builder-kit audit ./src
 ```
 
 ### 7. 1-Click Packaging & Containerization
 ```bash
 # Generate Dockerfile, Claude Desktop config, Cursor config, and mcp.json registry manifest
-npx @ritualdev_lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
+npx @ritualdev-lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
 ```
 
 ---
@@ -90,7 +100,7 @@ import {
   McpServerInspector,
   AgentShieldMcpAuditor,
   McpServerPackager,
-} from "@ritualdev_lab/mcp-builder-kit";
+} from "@ritualdev-lab/mcp-builder-kit";
 
 // 1. Scaffold a project
 const result = McpProjectScaffolder.scaffold({
@@ -151,10 +161,10 @@ Accelerate production deployments with battle-tested, pre-built enterprise conne
 
 ```bash
 # Browse all packs in terminal
-npx @ritualdev_lab/mcp-builder-kit packs list
+npx @ritualdev-lab/mcp-builder-kit packs list
 
 # Install preview stubs or unlock with your enterprise license
-npx @ritualdev_lab/mcp-builder-kit packs install enterprise-database-pack
+npx @ritualdev-lab/mcp-builder-kit packs install enterprise-database-pack
 ```
 
 ---
@@ -173,7 +183,7 @@ Display an official cryptographic security audit badge on your MCP server's `REA
 
 ```bash
 # Generate verified badge markdown snippet and checkout link
-npx @ritualdev_lab/mcp-builder-kit badge my-server-name --tier verified
+npx @ritualdev-lab/mcp-builder-kit badge my-server-name --tier verified
 ```
 
 ---
@@ -191,7 +201,7 @@ Get maximum reach, traffic, and client discovery for your custom MCP server acro
 
 ```bash
 # View spotlight tiers and generate direct checkout submission
-npx @ritualdev_lab/mcp-builder-kit spotlight my-server-name --tier mcp-featured-monthly
+npx @ritualdev-lab/mcp-builder-kit spotlight my-server-name --tier mcp-featured-monthly
 ```
 
 ---
@@ -208,8 +218,8 @@ Need a bespoke, production-ready MCP server custom-built for internal microservi
 
 ```bash
 # Generate tailored project brief and direct booking deposit links
-npx @ritualdev_lab/mcp-builder-kit turnkey starter --client "Acme AI" --company "Acme Corp"
-npx @ritualdev_lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQuery MCP server"
+npx @ritualdev-lab/mcp-builder-kit turnkey starter --client "Acme AI" --company "Acme Corp"
+npx @ritualdev-lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQuery MCP server"
 ```
 
 ---
@@ -237,11 +247,11 @@ npx @ritualdev_lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQue
 
 ```bash
 # Browse active grant programs or generate tailored grant pitch
-npx @ritualdev_lab/mcp-builder-kit grants
-npx @ritualdev_lab/mcp-builder-kit grants anthropic-alignment-ecosystem
+npx @ritualdev-lab/mcp-builder-kit grants
+npx @ritualdev-lab/mcp-builder-kit grants anthropic-alignment-ecosystem
 
 # Browse funded open-source bounties
-npx @ritualdev_lab/mcp-builder-kit bounties
+npx @ritualdev-lab/mcp-builder-kit bounties
 ```
 
 ---

@@ -14,9 +14,21 @@ export class VerifiedMcpBadgeService {
   /**
    * Generates a tamper-proof HMAC-SHA256 signature for an audited MCP server
    */
-  public static signAuditRecord(serverName: string, tier: McpBadgeTier = "verified"): string {
-    const payload = `mcp|${serverName.toLowerCase().trim()}|${tier}`;
-    return createHmac("sha256", VerifiedMcpBadgeService.BADGE_SECRET)
+  public static signAuditRecord(
+    serverName: string,
+    tier: McpBadgeTier = "verified",
+    auditMetadata: { commitSha?: string; auditScore?: number; timestamp?: number } = {},
+  ): string {
+    const secret = process.env.AGENTSHIELD_BADGE_SECRET;
+    if (!secret && process.env.NODE_ENV === "production") {
+      throw new Error("AGENTSHIELD_BADGE_SECRET must be configured in environment for production badge signing");
+    }
+    const signingKey = secret || "agentshield_development_audit_key";
+    const sha = auditMetadata.commitSha || "head";
+    const score = auditMetadata.auditScore ?? 100;
+    const ts = auditMetadata.timestamp || 1760443200; // normalized epoch reference
+    const payload = `mcp|${serverName.toLowerCase().trim()}|${tier}|${sha}|${score}|${ts}`;
+    return createHmac("sha256", signingKey)
       .update(payload)
       .digest("hex")
       .slice(0, 16);
@@ -25,8 +37,13 @@ export class VerifiedMcpBadgeService {
   /**
    * Verifies an MCP audit badge signature
    */
-  public static verifyAuditRecord(serverName: string, tier: McpBadgeTier, hash: string): boolean {
-    const expected = VerifiedMcpBadgeService.signAuditRecord(serverName, tier);
+  public static verifyAuditRecord(
+    serverName: string,
+    tier: McpBadgeTier,
+    hash: string,
+    auditMetadata?: { commitSha?: string; auditScore?: number; timestamp?: number },
+  ): boolean {
+    const expected = VerifiedMcpBadgeService.signAuditRecord(serverName, tier, auditMetadata);
     return expected.toLowerCase() === hash.toLowerCase();
   }
 
@@ -41,7 +58,7 @@ export class VerifiedMcpBadgeService {
     const hash = VerifiedMcpBadgeService.signAuditRecord(serverName, tier);
     const domain = VerifiedMcpBadgeService.CANONICAL_DOMAIN;
 
-    const svgBadgeUrl = `${domain}/api/v1/badges/${cleanSlug}.svg?tier=${tier}&hash=${hash}`;
+    const svgBadgeUrl = `${domain}/badges/${cleanSlug}.svg?tier=${tier}&hash=${hash}`;
     const verifyUrl = `${domain}/verify/${cleanSlug}?hash=${hash}&tier=${tier}`;
 
     // Pricing & Checkout via Dodo Payments
