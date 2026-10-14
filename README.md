@@ -24,7 +24,7 @@
 
 ## 🚀 Features
 
-- ⚡ **1-Command Scaffolding**: Run `npx @ritualdev-lab/mcp-builder-kit init <name>` to generate a complete, battle-tested MCP server.
+- ⚡ **1-Command Scaffolding**: Run `npx @ritualdev_lab/mcp-builder-kit init <name>` to generate a complete, battle-tested MCP server.
 - 🌐 **Dual Language Support**:
   - **TypeScript**: `@modelcontextprotocol/sdk` + Zod schemas + `tsup` bundler + Biome linter.
   - **Python**: `mcp[cli]` + FastMCP + Pydantic v2.
@@ -38,40 +38,40 @@
 
 ### 1. Scaffold a TypeScript MCP Server
 ```bash
-npx @ritualdev-lab/mcp-builder-kit init my-tools-server
+npx @ritualdev_lab/mcp-builder-kit init my-tools-server
 ```
 
 ### 2. Scaffold a Python FastMCP Server
 ```bash
-npx @ritualdev-lab/mcp-builder-kit init my-tools-server --lang python
+npx @ritualdev_lab/mcp-builder-kit init my-tools-server --lang python
 ```
 
 ### 3. Add a New Typed Tool to Your MCP Server
 ```bash
-npx @ritualdev-lab/mcp-builder-kit add-tool search_knowledge \
+npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
   --desc "Search vector store for relevant documentation" \
   --params "query:string,limit:number,filter:object"
 ```
 
 ### 4. Convert OpenAPI / Swagger Spec into MCP Tools
 ```bash
-npx @ritualdev-lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
 ```
 
 ### 5. Automated Protocol Conformance Inspection (CI/CD)
 ```bash
-npx @ritualdev-lab/mcp-builder-kit inspect "node dist/index.js"
+npx @ritualdev_lab/mcp-builder-kit inspect "node dist/index.js"
 ```
 
 ### 6. Pre-Flight Security & Injection Audit
 ```bash
-npx @ritualdev-lab/mcp-builder-kit audit ./src
+npx @ritualdev_lab/mcp-builder-kit audit ./src
 ```
 
 ### 7. 1-Click Packaging & Containerization
 ```bash
 # Generate Dockerfile, Claude Desktop config, Cursor config, and mcp.json registry manifest
-npx @ritualdev-lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
+npx @ritualdev_lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
 ```
 
 ---
@@ -100,7 +100,7 @@ import {
   McpServerInspector,
   AgentShieldMcpAuditor,
   McpServerPackager,
-} from "@ritualdev-lab/mcp-builder-kit";
+} from "@ritualdev_lab/mcp-builder-kit";
 
 // 1. Scaffold a project
 const result = McpProjectScaffolder.scaffold({

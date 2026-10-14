@@ -36,33 +36,33 @@ Welcome to the **MCP Builder Kit Wiki**! This repository serves as the engineeri
 
 ```bash
 # Initialize a new MCP server
-npx @ritualdev-lab/mcp-builder-kit init <project-name> [--lang typescript|python] [--transport stdio|sse]
+npx @ritualdev_lab/mcp-builder-kit init <project-name> [--lang typescript|python] [--transport stdio|sse]
 
 # Add a typed tool with validation
-npx @ritualdev-lab/mcp-builder-kit add-tool <tool-name> --desc "Tool description" --params "query:string,limit:number"
+npx @ritualdev_lab/mcp-builder-kit add-tool <tool-name> --desc "Tool description" --params "query:string,limit:number"
 
 # Compile OpenAPI / Swagger into tools
-npx @ritualdev-lab/mcp-builder-kit from-openapi ./spec.json --lang typescript
+npx @ritualdev_lab/mcp-builder-kit from-openapi ./spec.json --lang typescript
 
 # Run headless protocol inspector in CI
-npx @ritualdev-lab/mcp-builder-kit inspect "node dist/index.js"
+npx @ritualdev_lab/mcp-builder-kit inspect "node dist/index.js"
 
 # Run security audit on source directory
-npx @ritualdev-lab/mcp-builder-kit audit ./src
+npx @ritualdev_lab/mcp-builder-kit audit ./src
 
 # Generate Dockerfile and client IDE configs
-npx @ritualdev-lab/mcp-builder-kit package .
+npx @ritualdev_lab/mcp-builder-kit package .
 
 # Certified security badges & DevShelf directory spotlight
-npx @ritualdev-lab/mcp-builder-kit badge my-server --tier verified
-npx @ritualdev-lab/mcp-builder-kit spotlight my-server --tier mcp-featured-monthly
+npx @ritualdev_lab/mcp-builder-kit badge my-server --tier verified
+npx @ritualdev_lab/mcp-builder-kit spotlight my-server --tier mcp-featured-monthly
 
 # Turnkey B2B custom development inquiry
-npx @ritualdev-lab/mcp-builder-kit turnkey starter --client "Acme Corp"
+npx @ritualdev_lab/mcp-builder-kit turnkey starter --client "Acme Corp"
 
 # Foundation ecosystem grants and developer bounties
-npx @ritualdev-lab/mcp-builder-kit grants
-npx @ritualdev-lab/mcp-builder-kit bounties
+npx @ritualdev_lab/mcp-builder-kit grants
+npx @ritualdev_lab/mcp-builder-kit bounties
 ```
 
 ---
