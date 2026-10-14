@@ -50,6 +50,12 @@ export class OpenApiToMcpConverter {
 
     const paths = (spec.paths as Record<string, Record<string, unknown>>) || {};
 
+    // Extract base URL from servers block if available
+    let resolvedBaseUrl = options.baseUrl || "";
+    if (!resolvedBaseUrl && Array.isArray(spec.servers) && spec.servers.length > 0) {
+      resolvedBaseUrl = (spec.servers[0] as { url?: string })?.url || "";
+    }
+
     for (const [pathStr, pathItem] of Object.entries(paths)) {
       if (!pathItem || typeof pathItem !== "object") continue;
 
@@ -114,9 +120,15 @@ export class OpenApiToMcpConverter {
 
     let generatedCode = "";
     if (language === "typescript") {
-      generatedCode = tools.map((t) => McpCodeGenerator.generateTypeScriptTool(t)).join("\n\n");
+      const header = resolvedBaseUrl
+        ? `// Base API Endpoint: ${resolvedBaseUrl}\nconst BASE_URL = process.env.API_BASE_URL || ${JSON.stringify(resolvedBaseUrl)};\n\n`
+        : "";
+      generatedCode = header + tools.map((t) => McpCodeGenerator.generateTypeScriptTool(t)).join("\n\n");
     } else {
-      generatedCode = tools.map((t) => McpCodeGenerator.generatePythonTool(t)).join("\n\n");
+      const header = resolvedBaseUrl
+        ? `# Base API Endpoint: ${resolvedBaseUrl}\nBASE_URL = os.environ.get("API_BASE_URL", ${JSON.stringify(resolvedBaseUrl)})\n\n`
+        : "";
+      generatedCode = header + tools.map((t) => McpCodeGenerator.generatePythonTool(t)).join("\n\n");
     }
 
     return {

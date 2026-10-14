@@ -118,6 +118,35 @@ export class AgentShieldMcpAuditor {
               });
             }
           }
+
+          // Shannon Entropy Analysis: Detect high-entropy API keys and tokens (> 4.4 bits/char)
+          const tokenMatches = line.match(/(?:['"`])([a-zA-Z0-9+/=_-]{28,120})(?:['"`])/g);
+          if (tokenMatches) {
+            for (const t of tokenMatches) {
+              const rawStr = t.slice(1, -1);
+              if (rawStr.startsWith("http://") || rawStr.startsWith("https://") || rawStr.includes(" ")) {
+                continue;
+              }
+              const entropy = AgentShieldMcpAuditor.calculateEntropy(rawStr);
+              if (entropy >= 4.4) {
+                const alreadyCaptured = findings.some(
+                  (f) => f.file === relPath.replace(/\\/g, "/") && f.line === lineIdx + 1,
+                );
+                if (!alreadyCaptured) {
+                  findings.push({
+                    id: "SEC-ENT-001",
+                    type: "hardcoded_secret",
+                    severity: "high",
+                    file: relPath.replace(/\\/g, "/"),
+                    line: lineIdx + 1,
+                    snippet: line.trim().slice(0, 80),
+                    description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)})`,
+                    remediation: "Move high-entropy API key or token to process.env or a secret vault",
+                  });
+                }
+              }
+            }
+          }
         }
       } catch {
         // Skip unreadable files or binary assets
@@ -237,4 +266,24 @@ def sanitize_mcp_param(param, allow_absolute=True, base_dir=None):
     walk(dir);
     return results;
   }
+
+  /**
+   * Calculates the Shannon Entropy (bits per character) of a string to detect high-entropy keys
+   */
+  public static calculateEntropy(str: string): number {
+    if (!str || str.length === 0) return 0;
+    const freqs: Record<string, number> = {};
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      freqs[ch] = (freqs[ch] || 0) + 1;
+    }
+    let entropy = 0;
+    const len = str.length;
+    for (const ch of Object.keys(freqs)) {
+      const p = freqs[ch] / len;
+      entropy -= p * Math.log2(p);
+    }
+    return entropy;
+  }
 }
+

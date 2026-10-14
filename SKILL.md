@@ -18,7 +18,7 @@ Run the `mcp-builder` CLI or import the TypeScript engine directly:
 
 ### 1. TypeScript MCP Server
 ```bash
-npx @ritualdev_lab/mcp-builder-kit init <server-name> --lang typescript --transport stdio
+npx @ritualdev-lab/mcp-builder-kit init <server-name> --lang typescript --transport stdio
 ```
 
 This scaffolds:
@@ -31,7 +31,7 @@ This scaffolds:
 
 ### 2. Python FastMCP Server
 ```bash
-npx @ritualdev_lab/mcp-builder-kit init <server-name> --lang python
+npx @ritualdev-lab/mcp-builder-kit init <server-name> --lang python
 ```
 
 This scaffolds:
@@ -44,7 +44,7 @@ This scaffolds:
 ## 📦 Programmatic Usage
 
 ```typescript
-import { McpProjectScaffolder } from "@ritualdev_lab/mcp-builder-kit";
+import { McpProjectScaffolder } from "@ritualdev-lab/mcp-builder-kit";
 
 const result = McpProjectScaffolder.scaffold({
   projectName: "postgres-mcp",

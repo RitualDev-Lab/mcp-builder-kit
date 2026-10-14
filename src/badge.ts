@@ -7,12 +7,12 @@ import type { McpBadgeSnippetResult, McpBadgeTier } from "./types.js";
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: Badge utility class
 export class VerifiedMcpBadgeService {
-  private static readonly BADGE_SECRET =
-    process.env.AGENTSHIELD_BADGE_SECRET || "agentshield_verified_salt_2026";
   private static readonly CANONICAL_DOMAIN = "https://agentshield.ritualdev.in";
+  private static readonly MAX_AUDIT_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 days validity window
 
   /**
-   * Generates a tamper-proof HMAC-SHA256 signature for an audited MCP server
+   * Generates a tamper-proof HMAC-SHA256 signature for an audited MCP server.
+   * FAILS CLOSED: Requires AGENTSHIELD_BADGE_SECRET set in environment.
    */
   public static signAuditRecord(
     serverName: string,
@@ -20,22 +20,24 @@ export class VerifiedMcpBadgeService {
     auditMetadata: { commitSha?: string; auditScore?: number; timestamp?: number } = {},
   ): string {
     const secret = process.env.AGENTSHIELD_BADGE_SECRET;
-    if (!secret && process.env.NODE_ENV === "production") {
-      throw new Error("AGENTSHIELD_BADGE_SECRET must be configured in environment for production badge signing");
+    if (!secret) {
+      throw new Error(
+        "Security Error: AGENTSHIELD_BADGE_SECRET is not configured. Badges cannot be minted locally without canonical server authority.",
+      );
     }
-    const signingKey = secret || "agentshield_development_audit_key";
     const sha = auditMetadata.commitSha || "head";
     const score = auditMetadata.auditScore ?? 100;
-    const ts = auditMetadata.timestamp || 1760443200; // normalized epoch reference
+    // Default to a 10-minute epoch window if not explicitly provided
+    const ts = auditMetadata.timestamp || Math.floor(Date.now() / 600000) * 600000;
     const payload = `mcp|${serverName.toLowerCase().trim()}|${tier}|${sha}|${score}|${ts}`;
-    return createHmac("sha256", signingKey)
+    return createHmac("sha256", secret)
       .update(payload)
       .digest("hex")
       .slice(0, 16);
   }
 
   /**
-   * Verifies an MCP audit badge signature
+   * Verifies an MCP audit badge signature and checks expiry
    */
   public static verifyAuditRecord(
     serverName: string,
@@ -43,8 +45,23 @@ export class VerifiedMcpBadgeService {
     hash: string,
     auditMetadata?: { commitSha?: string; auditScore?: number; timestamp?: number },
   ): boolean {
-    const expected = VerifiedMcpBadgeService.signAuditRecord(serverName, tier, auditMetadata);
-    return expected.toLowerCase() === hash.toLowerCase();
+    const secret = process.env.AGENTSHIELD_BADGE_SECRET;
+    if (!secret) {
+      return false;
+    }
+    // Check expiry if timestamp provided
+    if (auditMetadata?.timestamp) {
+      const age = Date.now() - auditMetadata.timestamp;
+      if (age > VerifiedMcpBadgeService.MAX_AUDIT_AGE_MS || age < -60000) {
+        return false; // Expired or future-dated
+      }
+    }
+    try {
+      const expected = VerifiedMcpBadgeService.signAuditRecord(serverName, tier, auditMetadata);
+      return expected.toLowerCase() === hash.toLowerCase();
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -55,8 +72,14 @@ export class VerifiedMcpBadgeService {
     tier: McpBadgeTier = "verified",
   ): McpBadgeSnippetResult {
     const cleanSlug = encodeURIComponent(serverName.toLowerCase().replace(/\s+/g, "-"));
-    const hash = VerifiedMcpBadgeService.signAuditRecord(serverName, tier);
     const domain = VerifiedMcpBadgeService.CANONICAL_DOMAIN;
+    let hash = "unverified";
+    try {
+      hash = VerifiedMcpBadgeService.signAuditRecord(serverName, tier);
+    } catch {
+      // In local mode without server authority secret, hash indicates pending authority validation
+      hash = "pending_authority_audit";
+    }
 
     const svgBadgeUrl = `${domain}/badges/${cleanSlug}.svg?tier=${tier}&hash=${hash}`;
     const verifyUrl = `${domain}/verify/${cleanSlug}?hash=${hash}&tier=${tier}`;

@@ -373,7 +373,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       );
       const serverSlug = targetDir.split(/[\\/]/).pop() || "my-mcp-server";
       console.log(`\n🏆 Claim your Official "Verified Secure MCP Server" Badge & Certification:`);
-      console.log(`   👉 Run: npx @ritualdev_lab/mcp-builder-kit badge ${serverSlug}\n`);
+      console.log(`   👉 Run: npx @ritualdev-lab/mcp-builder-kit badge ${serverSlug}\n`);
     } else {
       console.log("\nDetected Security Findings:");
       for (const f of report.findings) {

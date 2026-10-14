@@ -4,6 +4,7 @@ import { VerifiedMcpBadgeService } from "../src/badge.js";
 
 describe("Monetization: Verified Secure MCP Server Badge & Dodo Payments Suite", () => {
   const serverName = "postgres-mcp-server";
+  process.env.AGENTSHIELD_BADGE_SECRET = "test_canonical_audit_secret_key_2026";
 
   test("generates cryptographic HMAC-SHA256 signature and verifies authentic tokens", () => {
     const verifiedHash = VerifiedMcpBadgeService.signAuditRecord(serverName, "verified");
