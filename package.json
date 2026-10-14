@@ -1,0 +1,53 @@
+{
+  "name": "@ritualdev_lab/mcp-builder-kit",
+  "version": "0.1.0",
+  "description": "Production Toolkit & Scaffolding Engine for Model Context Protocol (MCP) Servers",
+  "type": "module",
+  "bin": {
+    "mcp-builder": "./dist/cli.js",
+    "mcp-kit": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "templates", "README.md", "LICENSE", "SKILL.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RitualDev-Lab/mcp-builder-kit.git"
+  },
+  "homepage": "https://github.com/RitualDev-Lab/mcp-builder-kit#readme",
+  "bugs": {
+    "url": "https://github.com/RitualDev-Lab/mcp-builder-kit/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "tsx --test tests/**/*.test.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write ."
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "ai-agent",
+    "claude-desktop",
+    "antigravity",
+    "cursor",
+    "stdio",
+    "sse",
+    "scaffolding",
+    "toolkit"
+  ],
+  "author": "RitualDev Lab (https://github.com/RitualDev-Lab)",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
