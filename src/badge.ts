@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import type { McpBadgeTier, McpBadgeSnippetResult } from "./types.js";
+import type { McpBadgeSnippetResult, McpBadgeTier } from "./types.js";
 
 /**
  * AgentShield Verified MCP Server Audit Badge Generator
@@ -35,7 +35,7 @@ export class VerifiedMcpBadgeService {
    */
   public static getBadgeSnippet(
     serverName: string,
-    tier: McpBadgeTier = "verified"
+    tier: McpBadgeTier = "verified",
   ): McpBadgeSnippetResult {
     const cleanSlug = encodeURIComponent(serverName.toLowerCase().replace(/\s+/g, "-"));
     const hash = VerifiedMcpBadgeService.signAuditRecord(serverName, tier);

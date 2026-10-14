@@ -188,6 +188,24 @@ npx @ritualdev_lab/mcp-builder-kit spotlight my-server-name --tier mcp-featured-
 
 ---
 
+## 🛠️ Stream 4: B2B "Turnkey MCP Server" Custom Development ($500 – $3,500)
+
+Need a bespoke, production-ready MCP server custom-built for internal microservices, private VPCs, legacy databases, or proprietary enterprise SaaS? RitualDev Lab engineers build, test, certify, and containerize your complete MCP server turnkey.
+
+| Package | Investment | Delivery SLA | Key Deliverables & Warranty | Self-Serve Milestone Deposit |
+| :--- | :---: | :---: | :--- | :---: |
+| **Starter Turnkey** | **$500** | 48 - 72 Hours | 1-3 typed tools/resources, mock inspector test suite, AgentShield Zero-Leak certification, Docker configs, 7-day warranty | [**Reserve Starter ($250 Deposit) →**](https://checkout.dodopayments.com/buy/pdt_turnkey_starter_deposit?tier=starter&deposit=250) |
+| **Professional Multi-API** | **$1,500** | 5 - 7 Days | Up to 10 tools, OAuth2/credential rotation, dynamic resource streaming, Kubernetes manifests, 14-day dedicated support | [**Reserve Pro ($750 Deposit) →**](https://checkout.dodopayments.com/buy/pdt_turnkey_pro_deposit?tier=pro&deposit=750) |
+| **Enterprise Custom Architecture** | **$3,500** | 10 - 14 Days | Unlimited tools/prompts, private VPC/air-gapped deployment, strict RBAC, SLSA L3 provenance, DevShelf 3mo spotlight, 30-day Slack SLA | [**Reserve Enterprise ($1,750 Deposit) →**](https://checkout.dodopayments.com/buy/pdt_turnkey_enterprise_deposit?tier=enterprise&deposit=1750) |
+
+```bash
+# Generate tailored project brief and direct booking deposit links
+npx @ritualdev_lab/mcp-builder-kit turnkey starter --client "Acme AI" --company "Acme Corp"
+npx @ritualdev_lab/mcp-builder-kit turnkey pro --overview "Salesforce and BigQuery MCP server"
+```
+
+---
+
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
@@ -197,6 +215,7 @@ npx @ritualdev_lab/mcp-builder-kit spotlight my-server-name --tier mcp-featured-
 - [x] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing (`mcp-builder package`)**
 - [x] **Phase 6: Enterprise Tool Starters & Self-Serve Dodo Payments Monetization (`mcp-builder packs`)**
 - [x] **Phase 7: Verified Secure Server Badges & DevShelf Directory Spotlight (`mcp-builder badge`, `mcp-builder spotlight`)**
+- [x] **Phase 8: B2B Turnkey Custom MCP Server Development & Inquiries (`mcp-builder turnkey`)**
 
 ---
 

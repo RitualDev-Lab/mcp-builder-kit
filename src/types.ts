@@ -122,7 +122,12 @@ export type SecurityFindingSeverity = "critical" | "high" | "medium" | "low";
 
 export interface SecurityFinding {
   id: string;
-  type: "hardcoded_secret" | "command_injection" | "path_traversal" | "insecure_transport" | "wildcard_permission";
+  type:
+    | "hardcoded_secret"
+    | "command_injection"
+    | "path_traversal"
+    | "insecure_transport"
+    | "wildcard_permission";
   severity: SecurityFindingSeverity;
   file: string;
   line?: number;
@@ -194,4 +199,36 @@ export interface DevShelfSpotlightTier {
   description: string;
   checkoutUrl: string;
   features: string[];
+}
+
+export type TurnkeyPackageTierId = "starter" | "pro" | "enterprise";
+
+export interface TurnkeyPackageTier {
+  id: TurnkeyPackageTierId;
+  name: string;
+  priceUsd: number;
+  turnaroundDays: string;
+  description: string;
+  depositCheckoutUrl: string;
+  consultationUrl: string;
+  deliverables: string[];
+  sla: string;
+}
+
+export interface TurnkeyInquiryOptions {
+  clientName?: string;
+  companyName?: string;
+  tierId?: TurnkeyPackageTierId;
+  projectOverview?: string;
+  targetSystems?: string[];
+}
+
+export interface TurnkeyInquiryResult {
+  inquiryId: string;
+  tier: TurnkeyPackageTier;
+  clientName: string;
+  companyName: string;
+  depositCheckoutUrl: string;
+  consultationUrl: string;
+  intakeSummaryMarkdown: string;
 }

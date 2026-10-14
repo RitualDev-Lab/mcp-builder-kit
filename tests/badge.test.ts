@@ -13,7 +13,11 @@ describe("Monetization: Verified Secure MCP Server Badge & Dodo Payments Suite",
     const isValid = VerifiedMcpBadgeService.verifyAuditRecord(serverName, "verified", verifiedHash);
     assert.strictEqual(isValid, true, "Authentic HMAC signature should verify successfully");
 
-    const isTampered = VerifiedMcpBadgeService.verifyAuditRecord(serverName, "verified", "invalid_hash_1234");
+    const isTampered = VerifiedMcpBadgeService.verifyAuditRecord(
+      serverName,
+      "verified",
+      "invalid_hash_1234",
+    );
     assert.strictEqual(isTampered, false, "Tampered signature should fail verification");
   });
 

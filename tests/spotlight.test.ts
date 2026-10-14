@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
-import { DevShelfSpotlightService, DEVSHELF_MCP_SPOTLIGHT_TIERS } from "../src/spotlight.js";
+import { DEVSHELF_MCP_SPOTLIGHT_TIERS, DevShelfSpotlightService } from "../src/spotlight.js";
 
 describe("Monetization: DevShelf Featured MCP Directory Spotlight Suite", () => {
   const serverName = "superfile-mcp";
@@ -21,13 +21,18 @@ describe("Monetization: DevShelf Featured MCP Directory Spotlight Suite", () => 
   });
 
   test("generates DevShelf submission metadata and direct Dodo Payments checkout link", () => {
-    const spotlight = DevShelfSpotlightService.generateSpotlightSubmission(serverName, "mcp-featured-monthly");
+    const spotlight = DevShelfSpotlightService.generateSpotlightSubmission(
+      serverName,
+      "mcp-featured-monthly",
+    );
 
     assert.ok(spotlight);
     assert.strictEqual(spotlight.serverName, serverName);
     assert.ok(spotlight.checkoutUrl.includes("tool=superfile-mcp"));
     assert.ok(spotlight.featuredBadgeMarkdown.includes("Featured%20on-DevShelf"));
-    assert.ok(spotlight.featuredBadgeMarkdown.includes("https://devshelf.ritualdev.in/mcp/superfile-mcp"));
+    assert.ok(
+      spotlight.featuredBadgeMarkdown.includes("https://devshelf.ritualdev.in/mcp/superfile-mcp"),
+    );
     assert.ok(spotlight.directorySubmitUrl.includes("github.com/RitualDev-Lab/DevShelf"));
   });
 });

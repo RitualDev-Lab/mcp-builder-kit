@@ -4,11 +4,11 @@ import { McpCodeGenerator } from "./generator.js";
 import { OpenApiToMcpConverter } from "./openapi.js";
 import { McpProjectScaffolder } from "./scaffolder.js";
 import type {
+  McpBadgeTier,
   McpLanguage,
   McpTransport,
   ToolDefinition,
   ToolParameter,
-  McpBadgeTier,
 } from "./types.js";
 
 function printHelp(): void {
@@ -25,6 +25,7 @@ Usage:
   mcp-builder packs [list|install] [pack-id] [options]
   mcp-builder badge <server-name> [options]
   mcp-builder spotlight [server-name] [options]
+  mcp-builder turnkey [starter|pro|enterprise] [options]
   mcp-builder --help
   mcp-builder --version
 
@@ -38,6 +39,7 @@ Commands:
   packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
   badge <server-name>      Generates cryptographically verified AgentShield badge & checkout URL
   spotlight <server-name>  Generates DevShelf Featured Spotlight placement and Dodo checkout link
+  turnkey [tier]           Initiates B2B turnkey custom MCP server development inquiry & deposit link
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -498,7 +500,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   if (command === "badge") {
     const serverName = args[1];
     if (!serverName || serverName.startsWith("-")) {
-      console.error("❌ Error: Missing server name. Run: mcp-builder badge <server-name> [--tier verified|sponsor]");
+      console.error(
+        "❌ Error: Missing server name. Run: mcp-builder badge <server-name> [--tier verified|sponsor]",
+      );
       process.exit(1);
     }
 
@@ -516,7 +520,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     const { VerifiedMcpBadgeService } = await import("./badge.js");
     const snippet = VerifiedMcpBadgeService.getBadgeSnippet(serverName, tier);
 
-    console.log(`\n🛡️  AgentShield Verified MCP Server Badge for: '${serverName}' (${tier.toUpperCase()})`);
+    console.log(
+      `\n🛡️  AgentShield Verified MCP Server Badge for: '${serverName}' (${tier.toUpperCase()})`,
+    );
     console.log("========================================================================\n");
     console.log("Markdown Snippet for README.md:");
     console.log(snippet.markdown);
@@ -534,7 +540,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   if (command === "spotlight") {
     const serverName = args[1];
     if (!serverName || serverName.startsWith("-")) {
-      console.error("❌ Error: Missing server name. Run: mcp-builder spotlight <server-name> [--tier monthly|takeover]");
+      console.error(
+        "❌ Error: Missing server name. Run: mcp-builder spotlight <server-name> [--tier monthly|takeover]",
+      );
       process.exit(1);
     }
 
@@ -554,7 +562,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
     console.log(`\n🌟 DevShelf Featured MCP Directory Spotlight: '${serverName}'`);
     console.log("========================================================================\n");
-    console.log(`Tier:             ${spotlight.tier.name} ($${spotlight.tier.priceUsd} / ${spotlight.tier.billingPeriod})`);
+    console.log(
+      `Tier:             ${spotlight.tier.name} ($${spotlight.tier.priceUsd} / ${spotlight.tier.billingPeriod})`,
+    );
     console.log(`Description:      ${spotlight.tier.description}`);
     console.log("\nIncluded Growth & Visibility Features:");
     for (const feat of spotlight.tier.features) {
@@ -566,6 +576,59 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log(`👉 ${spotlight.checkoutUrl}`);
     console.log("\n📬 Submit Tool to DevShelf Directory:");
     console.log(`👉 ${spotlight.directorySubmitUrl}\n`);
+    console.log("========================================================================\n");
+    return;
+  }
+
+  if (command === "turnkey") {
+    let tierId: "starter" | "pro" | "enterprise" = "starter";
+    let clientName: string | undefined;
+    let companyName: string | undefined;
+    let projectOverview: string | undefined;
+
+    const rawTier = (args[1] ?? "").toLowerCase();
+    if (rawTier === "pro") {
+      tierId = "pro";
+    } else if (rawTier === "enterprise") {
+      tierId = "enterprise";
+    } else if (rawTier === "starter") {
+      tierId = "starter";
+    }
+
+    for (let i = 1; i < args.length; i++) {
+      if (args[i] === "--client" && args[i + 1]) {
+        clientName = args[i + 1];
+        i++;
+      } else if (args[i] === "--company" && args[i + 1]) {
+        companyName = args[i + 1];
+        i++;
+      } else if (args[i] === "--overview" && args[i + 1]) {
+        projectOverview = args[i + 1];
+        i++;
+      } else if (args[i] === "--tier" && args[i + 1]) {
+        const val = args[i + 1].toLowerCase();
+        if (val === "pro" || val === "enterprise" || val === "starter") {
+          tierId = val;
+        }
+        i++;
+      }
+    }
+
+    const { TurnkeyMcpService } = await import("./turnkey.js");
+    const inquiry = TurnkeyMcpService.generateInquiry({
+      tierId,
+      clientName,
+      companyName,
+      projectOverview,
+    });
+
+    console.log("\n========================================================================");
+    console.log(inquiry.intakeSummaryMarkdown);
+    console.log("\n========================================================================");
+    console.log("\n💳 50% Milestone Deposit Checkout (Dodo Payments):");
+    console.log(`👉 ${inquiry.depositCheckoutUrl}`);
+    console.log("\n📅 Architecture Discovery Booking:");
+    console.log(`👉 ${inquiry.consultationUrl}\n`);
     console.log("========================================================================\n");
     return;
   }

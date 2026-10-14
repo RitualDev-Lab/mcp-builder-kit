@@ -10,8 +10,10 @@ export const DEVSHELF_MCP_SPOTLIGHT_TIERS: Record<string, DevShelfSpotlightTier>
     name: "DevShelf Featured MCP Spotlight (Monthly)",
     priceUsd: 49,
     billingPeriod: "monthly",
-    description: "Top sticky placement in the DevShelf MCP Directory, verified sponsor badge, and monthly newsletter highlight.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_featured_monthly?quantity=1",
+    description:
+      "Top sticky placement in the DevShelf MCP Directory, verified sponsor badge, and monthly newsletter highlight.",
+    checkoutUrl:
+      "https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_featured_monthly?quantity=1",
     features: [
       "Top sticky spotlight placement in DevShelf MCP Directory",
       "Official 'Featured on DevShelf' badge for repository",
@@ -25,7 +27,8 @@ export const DEVSHELF_MCP_SPOTLIGHT_TIERS: Record<string, DevShelfSpotlightTier>
     name: "DevShelf MCP Category Exclusive Sponsor",
     priceUsd: 149,
     billingPeriod: "monthly",
-    description: "Exclusive top banner banner takeover in your MCP category (Databases, DevOps, Search, or RAG) with direct user routing.",
+    description:
+      "Exclusive top banner banner takeover in your MCP category (Databases, DevOps, Search, or RAG) with direct user routing.",
     checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_takeover?quantity=1",
     features: [
       "Exclusive #1 header banner takeover in your specific category",
@@ -53,18 +56,23 @@ export class DevShelfSpotlightService {
   /**
    * Generates custom DevShelf submission metadata and instant Dodo Payments checkout link
    */
-  public static generateSpotlightSubmission(serverName: string, tierId = "mcp-featured-monthly"): {
+  public static generateSpotlightSubmission(
+    serverName: string,
+    tierId = "mcp-featured-monthly",
+  ): {
     tier: DevShelfSpotlightTier;
     serverName: string;
     checkoutUrl: string;
     featuredBadgeMarkdown: string;
     directorySubmitUrl: string;
   } {
-    const tier = DEVSHELF_MCP_SPOTLIGHT_TIERS[tierId] || DEVSHELF_MCP_SPOTLIGHT_TIERS["mcp-featured-monthly"];
+    const tier =
+      DEVSHELF_MCP_SPOTLIGHT_TIERS[tierId] || DEVSHELF_MCP_SPOTLIGHT_TIERS["mcp-featured-monthly"];
     const slug = encodeURIComponent(serverName.toLowerCase().replace(/\s+/g, "-"));
     const checkoutUrl = `${tier.checkoutUrl}&tool=${slug}`;
     const featuredBadgeMarkdown = `[![Featured on DevShelf](https://img.shields.io/badge/Featured%20on-DevShelf-7928CA?style=for-the-badge&logo=googlechrome&logoColor=white)](https://devshelf.ritualdev.in/mcp/${slug})`;
-    const directorySubmitUrl = "https://github.com/RitualDev-Lab/DevShelf/issues/new?template=02_add_tool.yml";
+    const directorySubmitUrl =
+      "https://github.com/RitualDev-Lab/DevShelf/issues/new?template=02_add_tool.yml";
 
     return {
       tier,
