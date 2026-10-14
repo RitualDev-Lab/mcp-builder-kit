@@ -1,0 +1,52 @@
+# MCP Builder Kit
+> Production Toolkit & Scaffolding Engine for Model Context Protocol (MCP) Servers
+
+MCP Builder Kit enables software teams to scaffold, develop, inspect, audit, and package production Model Context Protocol (MCP) servers in TypeScript and Python (FastMCP).
+
+Website: https://mcp.ritualdev.in/
+Repository: https://github.com/RitualDev-Lab/mcp-builder-kit
+Developer Wiki: https://github.com/RitualDev-Lab/mcp-builder-kit/wiki
+Ecosystem Hub: https://devshelf.ritualdev.in/
+License: Apache-2.0
+Developer Contact: developer@ritualdev.in
+Support: support@ritualdev.in
+Enterprise Inquiries: contact@ritualdev.in
+
+## Quick Start CLI
+```bash
+# Scaffold a TypeScript MCP server
+npx @ritualdev-lab/mcp-builder-kit init my-tools-server
+
+# Scaffold a Python FastMCP server
+npx @ritualdev-lab/mcp-builder-kit init my-tools-server --lang python
+
+# Generate typed tool code with Zod schema
+npx @ritualdev-lab/mcp-builder-kit add-tool search_knowledge --desc "Vector search" --params "query:string,limit:number"
+
+# Convert OpenAPI / Swagger spec into MCP tools
+npx @ritualdev-lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+
+# Run headless protocol conformance inspection
+npx @ritualdev-lab/mcp-builder-kit inspect "node dist/index.js"
+
+# Pre-flight AgentShield Zero-Leak security audit
+npx @ritualdev-lab/mcp-builder-kit audit ./src
+
+# 1-Click packaging & containerization (Docker, Claude Desktop, Cursor)
+npx @ritualdev-lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
+```
+
+## Core Features & Primitives
+- **Dual Language Engine**: Native scaffolding for TypeScript (@modelcontextprotocol/sdk + Zod + tsup) and Python (FastMCP + Pydantic v2).
+- **Dual Transports**: stdio for local agent execution (Claude Desktop, Cursor, Antigravity) and sse / streamable HTTP for remote containerized environments.
+- **OpenAPI to MCP Compiler**: Ingests Swagger/OpenAPI specifications, resolves $ref schemas, and produces typed MCP tool handlers.
+- **Headless Conformance Inspector**: Automates full JSON-RPC handshakes, tool listing discovery, and latency measurement in CI/CD pipelines.
+- **AgentShield Zero-Leak Auditor**: AST and adaptive Shannon entropy scanning (detecting API keys, private keys, command injections, and path traversals) with drop-in parameter sanitizers.
+- **1-Click Packaging**: Generates multi-stage Dockerfiles, Claude Desktop config snippets, Cursor configs, and mcp.json registry manifests.
+
+## Ecosystem Services & Enterprise Tiers
+- **Enterprise Tool Packs ($49)**: Pre-built production connectors for Postgres, Kubernetes, Stripe, and AWS.
+- **Verified Badge & Spotlight ($79)**: Cryptographic AgentShield zero-leak audit badge and DevShelf directory showcase.
+- **DevShelf Directory Spotlight ($149/mo)**: Promoted directory placement and showcase across AI builders.
+- **Turnkey B2B Engineering (From $1,750)**: Custom MCP server engineering, private VPC networking, and SLA guarantees.
+- **Ecosystem Grants ($1k–$25k)**: Programs you can apply to for open-source AI tooling grants.
