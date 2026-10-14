@@ -74,7 +74,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   }
 
   if (args.includes("--version") || args.includes("-v")) {
-    console.log("mcp-builder-kit v0.1.0");
+    console.log("mcp-builder-kit v0.1.2");
     return;
   }
 

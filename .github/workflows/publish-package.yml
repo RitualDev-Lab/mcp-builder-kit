@@ -78,6 +78,8 @@ jobs:
 
       - name: Publish to npm
         continue-on-error: true
-        run: npm publish --access public
+        run: |
+          node -e "const pkg = require('./package.json'); pkg.name = '@ritualdev_lab/mcp-builder-kit'; pkg.publishConfig = { access: 'public', registry: 'https://registry.npmjs.org' }; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');"
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
