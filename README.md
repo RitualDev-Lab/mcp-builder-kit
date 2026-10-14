@@ -162,18 +162,6 @@ console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 
 ---
 
-## 🗺️ Roadmap & Architecture
-
-- [x] **Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
-- [x] **Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`, `from-openapi`)**
-- [x] **Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
-- [x] **AgentShield Security Audit, Entropy Detection & Zero-Leak Isolation (`mcp-builder audit`)**
-- [x] **1-Click Packaging, Dockerization & Directory Publishing (`mcp-builder package`)**
-- [x] **Enterprise Connectors & DevShelf Directory Spotlight (`mcp-builder packs`, `spotlight`)**
-- [x] **Foundation Ecosystem Grants & Polar.sh Contributor Bounties (`mcp-builder grants`, `bounties`)**
-
----
-
 ## 👥 Maintainers & Contributors
 
 Initiated and maintained with 💜 by [**RitualDev Lab**](https://github.com/RitualDev-Lab).
