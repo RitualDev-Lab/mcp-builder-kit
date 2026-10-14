@@ -25,3 +25,38 @@ export interface ScaffoldResult {
   transport: McpTransport;
   filesCreated: string[];
 }
+
+export type ToolParamType = "string" | "number" | "boolean" | "object" | "array";
+
+export interface ToolParameter {
+  name: string;
+  type: ToolParamType;
+  description?: string;
+  required?: boolean;
+  default?: unknown;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: ToolParameter[];
+}
+
+export interface ResourceDefinition {
+  uri: string;
+  name: string;
+  mimeType: string;
+  description?: string;
+}
+
+export interface OpenApiConversionOptions {
+  spec: Record<string, unknown>;
+  serverName?: string;
+  language?: McpLanguage;
+  baseUrl?: string;
+}
+
+export interface OpenApiConversionResult {
+  tools: ToolDefinition[];
+  generatedCode: string;
+}

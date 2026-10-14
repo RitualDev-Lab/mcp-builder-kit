@@ -38,20 +38,39 @@ npx @ritualdev_lab/mcp-builder-kit init my-tools-server
 npx @ritualdev_lab/mcp-builder-kit init my-tools-server --lang python
 ```
 
+### 3. Add a New Typed Tool to Your MCP Server
+```bash
+npx @ritualdev_lab/mcp-builder-kit add-tool search_knowledge \
+  --desc "Search vector store for relevant documentation" \
+  --params "query:string,limit:number,filter:object"
+```
+
+### 4. Convert OpenAPI / Swagger Spec into MCP Tools
+```bash
+npx @ritualdev_lab/mcp-builder-kit from-openapi ./petstore.json --lang typescript
+```
+
 ---
 
-## 💻 CLI Options
+## 💻 CLI Commands & Options
 
 ```text
-Usage:
-  mcp-builder init <project-name> [options]
+Commands:
+  init <name>              Scaffolds a new MCP server project
+  add-tool <name>          Generates typed MCP tool code and JSON schema snippet
+  from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
 
-Options:
-  --lang, -l       Language: 'typescript' (default) or 'python'
-  --transport, -t  Transport: 'stdio' (default), 'sse', or 'both'
-  --dir, -d        Target directory (defaults to ./<project-name>)
-  --desc           Short project description
-  --author         Author or organization name
+Options for 'init':
+  --lang, -l               Language: 'typescript' (default) or 'python'
+  --transport, -t          Transport: 'stdio' (default), 'sse', or 'both'
+  --dir, -d                Target directory (defaults to ./<project-name>)
+  --desc                   Short project description
+  --author                 Author or organization name
+
+Options for 'add-tool':
+  --lang, -l               Output language: 'typescript' (default) or 'python'
+  --desc                   Tool description
+  --params                 Comma-separated list of paramName:type (e.g. "query:string,limit:number")
 ```
 
 ---
@@ -59,8 +78,9 @@ Options:
 ## 🧩 Programmatic SDK
 
 ```typescript
-import { McpProjectScaffolder } from "@ritualdev_lab/mcp-builder-kit";
+import { McpProjectScaffolder, McpCodeGenerator, OpenApiToMcpConverter } from "@ritualdev_lab/mcp-builder-kit";
 
+// 1. Scaffold a project
 const result = McpProjectScaffolder.scaffold({
   projectName: "sqlite-explorer",
   targetDir: "./servers/sqlite-explorer",
@@ -69,7 +89,18 @@ const result = McpProjectScaffolder.scaffold({
   description: "SQLite database explorer MCP server",
 });
 
-console.log(`Created ${result.filesCreated.length} files successfully!`);
+// 2. Generate tool code dynamically
+const toolCode = McpCodeGenerator.generateTypeScriptTool({
+  name: "execute_query",
+  description: "Runs a read-only SQL query on the database",
+  parameters: [{ name: "sql", type: "string", required: true, description: "SQL query statement" }],
+});
+
+// 3. Convert an OpenAPI spec
+const mcpTools = OpenApiToMcpConverter.convert({
+  spec: mySwaggerJson,
+  language: "typescript",
+});
 ```
 
 ---
@@ -77,7 +108,7 @@ console.log(`Created ${result.filesCreated.length} files successfully!`);
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
-- [ ] **Phase 2: Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`)**
+- [x] **Phase 2: Intelligent Tool, Resource & OpenAPI Generators (`mcp-builder add-tool`)**
 - [ ] **Phase 3: Headless Mock Inspector & Conformance Test Suite (`mcp-builder inspect`)**
 - [ ] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation**
 - [ ] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing**
