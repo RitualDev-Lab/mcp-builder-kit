@@ -24,6 +24,7 @@ Usage:
   mcp-builder package [target-dir] [options]
   mcp-builder packs [list|install] [pack-id] [options]
   mcp-builder badge <server-name> [options]
+  mcp-builder spotlight [server-name] [options]
   mcp-builder --help
   mcp-builder --version
 
@@ -36,6 +37,7 @@ Commands:
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
   packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
   badge <server-name>      Generates cryptographically verified AgentShield badge & checkout URL
+  spotlight <server-name>  Generates DevShelf Featured Spotlight placement and Dodo checkout link
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
@@ -524,6 +526,46 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log(`👉 ${snippet.verifyUrl}`);
     console.log("\n🛒 Claim / Certify Official Verified Status via Dodo Payments ($29 - $79):");
     console.log(`👉 ${snippet.checkoutUrl}\n`);
+    console.log("========================================================================\n");
+    return;
+  }
+
+  // 9. mcp-builder spotlight (DevShelf Featured MCP Directory Spotlight via Dodo Payments)
+  if (command === "spotlight") {
+    const serverName = args[1];
+    if (!serverName || serverName.startsWith("-")) {
+      console.error("❌ Error: Missing server name. Run: mcp-builder spotlight <server-name> [--tier monthly|takeover]");
+      process.exit(1);
+    }
+
+    let tierId = "mcp-featured-monthly";
+    for (let i = 2; i < args.length; i++) {
+      if (args[i] === "--tier" && args[i + 1]) {
+        const rawTier = args[i + 1].toLowerCase();
+        if (rawTier === "takeover" || rawTier === "mcp-category-takeover") {
+          tierId = "mcp-category-takeover";
+        }
+        i++;
+      }
+    }
+
+    const { DevShelfSpotlightService } = await import("./spotlight.js");
+    const spotlight = DevShelfSpotlightService.generateSpotlightSubmission(serverName, tierId);
+
+    console.log(`\n🌟 DevShelf Featured MCP Directory Spotlight: '${serverName}'`);
+    console.log("========================================================================\n");
+    console.log(`Tier:             ${spotlight.tier.name} ($${spotlight.tier.priceUsd} / ${spotlight.tier.billingPeriod})`);
+    console.log(`Description:      ${spotlight.tier.description}`);
+    console.log("\nIncluded Growth & Visibility Features:");
+    for (const feat of spotlight.tier.features) {
+      console.log(`   • ${feat}`);
+    }
+    console.log("\nFeatured on DevShelf Badge for README.md:");
+    console.log(spotlight.featuredBadgeMarkdown);
+    console.log("\n🛒 Complete Self-Serve Checkout via Dodo Payments:");
+    console.log(`👉 ${spotlight.checkoutUrl}`);
+    console.log("\n📬 Submit Tool to DevShelf Directory:");
+    console.log(`👉 ${spotlight.directorySubmitUrl}\n`);
     console.log("========================================================================\n");
     return;
   }

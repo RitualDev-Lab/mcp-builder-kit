@@ -185,3 +185,13 @@ export interface McpBadgeSnippetResult {
   checkoutUrl: string;
   tier: McpBadgeTier;
 }
+
+export interface DevShelfSpotlightTier {
+  id: string;
+  name: string;
+  priceUsd: number;
+  billingPeriod: "monthly" | "one_time";
+  description: string;
+  checkoutUrl: string;
+  features: string[];
+}

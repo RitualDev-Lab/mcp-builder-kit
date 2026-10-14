@@ -170,6 +170,24 @@ npx @ritualdev_lab/mcp-builder-kit badge my-server-name --tier verified
 
 ---
 
+## 🌟 DevShelf Featured MCP Directory Spotlight ($49 – $149 / month)
+
+Get maximum reach, traffic, and client discovery for your custom MCP server across 15,000+ AI developers and agentic engineers on [**DevShelf MCP Directory**](https://devshelf.ritualdev.in):
+
+[![Featured on DevShelf](https://img.shields.io/badge/Featured%20on-DevShelf%20MCP%20Directory-6366f1?logo=sparkles&logoColor=white&style=flat-square)](https://devshelf.ritualdev.in/mcp/featured)
+
+| Spotlight Tier | Price | Placement & Perks | Self-Serve Checkout |
+| :--- | :---: | :--- | :---: |
+| **Featured Monthly** | **$49 / mo** | Top 10 directory carousel placement, "Featured on DevShelf" badge, monthly traffic digest | [**Get Featured Monthly ($49/mo) →**](https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_featured_monthly?tier=mcp-featured-monthly&price=49) |
+| **Category Exclusive Takeover** | **$149 / mo** | #1 sticky placement across category, Hero banner highlight, weekly email blast spotlight | [**Get Category Takeover ($149/mo) →**](https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_category_takeover?tier=mcp-category-takeover&price=149) |
+
+```bash
+# View spotlight tiers and generate direct checkout submission
+npx @ritualdev_lab/mcp-builder-kit spotlight my-server-name --tier mcp-featured-monthly
+```
+
+---
+
 ## 🗺️ Roadmap & Phases
 
 - [x] **Phase 1: Architecture, Core Engine & Scaffolding CLI (`mcp-init`)**
@@ -178,6 +196,7 @@ npx @ritualdev_lab/mcp-builder-kit badge my-server-name --tier verified
 - [x] **Phase 4: AgentShield Security Audit & Zero-Leak Isolation (`mcp-builder audit`)**
 - [x] **Phase 5: 1-Click Packaging, Dockerization & Directory Publishing (`mcp-builder package`)**
 - [x] **Phase 6: Enterprise Tool Starters & Self-Serve Dodo Payments Monetization (`mcp-builder packs`)**
+- [x] **Phase 7: Verified Secure Server Badges & DevShelf Directory Spotlight (`mcp-builder badge`, `mcp-builder spotlight`)**
 
 ---
 
