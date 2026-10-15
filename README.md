@@ -29,7 +29,7 @@
 - 🌐 **Dual Language Support**:
   - **TypeScript**: `@modelcontextprotocol/sdk` + Zod schemas + `tsup` bundler + Biome linter.
   - **Python**: `mcp[cli]` + FastMCP + Pydantic v2.
-- 🔌 **Dual Transports**: Ready-to-go `stdio` (Desktop/Agents) and `sse` (Remote/Docker).
+- 🔌 **Universal Transports**: Production-ready `stdio` (Desktop/Agents), `sse` (Server-Sent Events), and modern **Streamable HTTP** endpoints for serverless & container fleets.
 - 🧩 **Built-in Primitives**: Fully wired Tool listings, Tool callers, Resources, and Metadata endpoints.
 - 🛡️ **Antigravity Skill Native**: Includes a first-class [`SKILL.md`](SKILL.md) for autonomous agent execution.
 
