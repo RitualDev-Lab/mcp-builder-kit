@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import * as readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import { McpCodeGenerator } from "./generator.js";
 import { OpenApiToMcpConverter } from "./openapi.js";
 import { McpProjectScaffolder } from "./scaffolder.js";
@@ -16,10 +18,12 @@ function printHelp(): void {
 🚀 mcp-builder-kit - Production Model Context Protocol (MCP) Scaffolding CLI
 
 Usage:
-  mcp-builder init <project-name> [options]
+  mcp-builder init [project-name] [options]
   mcp-builder add-tool <tool-name> [options]
   mcp-builder from-openapi <openapi-spec-path> [options]
-  mcp-builder inspect "<server-command>"
+  mcp-builder inspect "<server-command>" [--ci]
+  mcp-builder deploy [--target cloudflare-workers|cloud-run]
+  mcp-builder ui [--port 4100]
   mcp-builder audit [target-dir]
   mcp-builder package [target-dir] [options]
   mcp-builder packs [list|install] [pack-id] [options]
@@ -32,10 +36,12 @@ Usage:
   mcp-builder --version
 
 Commands:
-  init <name>              Scaffolds a new MCP server project
+  init [name]              Scaffolds a new MCP server project (interactive wizard if omitted)
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
-  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
+  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance (--ci)
+  deploy                   Generates serverless Cloudflare Workers or Cloud Run container deployment
+  ui                       Launches lightweight local Visual Inspector Web UI & live testing studio
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
   packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)
@@ -51,6 +57,17 @@ Options for 'init':
   --dir, -d                Target output directory (defaults to ./<project-name>)
   --desc                   Short project description
   --author                 Project author name / organization
+  --interactive, -i        Launch interactive step-by-step TUI wizard
+
+Options for 'inspect':
+  --ci                     Exit with status code 1 if any conformance check fails
+
+Options for 'deploy':
+  --target                 Deployment target: 'cloudflare-workers' (default) or 'cloud-run'
+  --dir, -d                Target output directory (defaults to current directory)
+
+Options for 'ui':
+  --port, -p               Local port for Visual Inspector UI (default: 4100)
 
 Options for 'add-tool':
   --lang, -l               Output language: 'typescript' (default) or 'python'
@@ -82,17 +99,44 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
   // 1. mcp-builder init
   if (command === "init") {
-    const projectName = args[1];
-    if (!projectName || projectName.startsWith("-")) {
-      console.error("❌ Error: Missing project name. Run: mcp-builder init <project-name>");
-      process.exit(1);
-    }
+    let projectName = args[1];
+    const isInteractiveFlag = args.includes("--interactive") || args.includes("-i") || !projectName || projectName.startsWith("-");
 
     let language: McpLanguage = "typescript";
     let transport: McpTransport = "stdio";
-    let targetDir = resolve(process.cwd(), projectName);
+    let targetDir = "";
     let description = "High-performance Model Context Protocol (MCP) server";
     let author = "RitualDev Lab";
+
+    if (isInteractiveFlag && (!projectName || projectName.startsWith("-") || args.includes("--interactive") || args.includes("-i"))) {
+      console.log("\n🧙 Welcome to the Interactive MCP Server Wizard!\n");
+      const rl = readline.createInterface({ input, output });
+      try {
+        if (!projectName || projectName.startsWith("-")) {
+          const ansName = await rl.question("? Project name (e.g. my-mcp-server): ");
+          projectName = ansName.trim() || "my-mcp-server";
+        }
+
+        const ansLang = await rl.question("? Language [1: TypeScript (default), 2: Python]: ");
+        language = ansLang.trim() === "2" || ansLang.toLowerCase().includes("python") ? "python" : "typescript";
+
+        const ansTrans = await rl.question("? Transport [1: stdio (default), 2: sse, 3: both]: ");
+        const transTrim = ansTrans.trim();
+        if (transTrim === "2" || transTrim.toLowerCase() === "sse") transport = "sse";
+        else if (transTrim === "3" || transTrim.toLowerCase() === "both") transport = "both";
+        else transport = "stdio";
+
+        const ansDesc = await rl.question("? Short description (optional): ");
+        if (ansDesc.trim()) description = ansDesc.trim();
+
+        const ansAuthor = await rl.question("? Author / Organization (default: RitualDev Lab): ");
+        if (ansAuthor.trim()) author = ansAuthor.trim();
+      } finally {
+        rl.close();
+      }
+    }
+
+    targetDir = resolve(process.cwd(), projectName);
 
     for (let i = 2; i < args.length; i++) {
       const arg = args[i];
@@ -302,7 +346,8 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       process.exit(1);
     }
 
-    const commandArgs = args.slice(2);
+    const isCi = args.includes("--ci");
+    const commandArgs = args.slice(2).filter((a) => a !== "--ci");
     console.log(`\n🔍 Inspecting MCP Server: ${targetCommand} ${commandArgs.join(" ")}`);
     console.log("   • Connecting via stdio transport...");
 
@@ -330,7 +375,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       );
 
       console.log("\nConformance Checks:");
+      let hasFailedCheck = false;
       for (const check of report.conformanceChecks) {
+        if (!check.passed) hasFailedCheck = true;
         console.log(`   ${check.passed ? "✅" : "❌"} ${check.name}: ${check.details || ""}`);
       }
 
@@ -340,6 +387,11 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       }
 
       console.log("=======================================================\n");
+
+      if (isCi && hasFailedCheck) {
+        console.error("❌ MCP Conformance Check Failed under CI gate!");
+        process.exit(1);
+      }
       return;
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : "Inspection failed";
@@ -691,6 +743,76 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log("\n⚡ Polar.sh Contributor Bounties:");
     console.log(`👉 ${catalog.polarBountiesUrl}\n`);
     console.log("========================================================================\n");
+    return;
+  }
+
+  // 12. mcp-builder deploy
+  if (command === "deploy") {
+    let target: "cloudflare-workers" | "cloud-run" = "cloudflare-workers";
+    let targetDir = process.cwd();
+
+    for (let i = 1; i < args.length; i++) {
+      const arg = args[i];
+      if (arg === "--target" && args[i + 1]) {
+        const tVal = args[i + 1].toLowerCase();
+        if (tVal === "cloudflare-workers" || tVal === "cloud-run") {
+          target = tVal;
+        } else {
+          console.error(`❌ Error: Invalid target '${args[i + 1]}'. Choose 'cloudflare-workers' or 'cloud-run'.`);
+          process.exit(1);
+        }
+        i++;
+      } else if ((arg === "--dir" || arg === "-d") && args[i + 1]) {
+        targetDir = resolve(process.cwd(), args[i + 1]);
+        i++;
+      }
+    }
+
+    console.log("\n🚀 Generating Serverless MCP Deployment Configuration");
+    console.log(`   • Target Platform: ${target}`);
+    console.log(`   • Output Dir:      ${targetDir}\n`);
+
+    const { McpServerDeployer } = await import("./deployer.js");
+    const result = McpServerDeployer.generateDeployment({
+      target,
+      outputDir: targetDir,
+    });
+
+    console.log("✅ Created Serverless Deployment Manifests:");
+    for (const f of result.filesCreated) {
+      console.log(`   + ${f}`);
+    }
+
+    console.log("\n📦 Deployment Instructions:");
+    for (const step of result.deployInstructions) {
+      console.log(`   ${step}`);
+    }
+    console.log("");
+    return;
+  }
+
+  // 13. mcp-builder ui
+  if (command === "ui") {
+    let port = 4100;
+    for (let i = 1; i < args.length; i++) {
+      const arg = args[i];
+      if ((arg === "--port" || arg === "-p") && args[i + 1]) {
+        const p = Number.parseInt(args[i + 1], 10);
+        if (!Number.isNaN(p)) port = p;
+        i++;
+      }
+    }
+
+    const { McpVisualInspectorServer } = await import("./dashboard.js");
+    const server = new McpVisualInspectorServer({ port });
+    const instance = await server.start();
+
+    console.log("\n⚡ MCP Visual Inspector & Studio started!");
+    console.log(`👉 Open in browser: \x1b[36m${instance.url}\x1b[0m`);
+    console.log("Press Ctrl+C to stop.\n");
+
+    // Keep process alive unless terminated
+    await new Promise(() => {});
     return;
   }
 

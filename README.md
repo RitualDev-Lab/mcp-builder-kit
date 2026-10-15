@@ -81,10 +81,12 @@ npx @ritualdev-lab/mcp-builder-kit package ./my-server --lang typescript --port 
 
 ```text
 Commands:
-  init <name>              Scaffolds a new MCP server project
+  init [name]              Scaffolds a new MCP server project (interactive wizard if omitted)
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
-  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance
+  inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance (--ci)
+  deploy                   Generates serverless Cloudflare Workers or Cloud Run container deployment
+  ui                       Launches lightweight local Visual Inspector Web UI & live testing studio
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
   packs [list|install]     Browse or install enterprise connector packs (Postgres, K8s, Stripe)

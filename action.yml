@@ -7,6 +7,10 @@ inputs:
     description: "Directory containing the MCP server codebase (default: .)"
     required: false
     default: "."
+  server_command:
+    description: "Optional command to execute and inspect live server via stdio (e.g. 'node dist/index.js')"
+    required: false
+    default: ""
   fail_on_security_risk:
     description: "Whether to fail CI step if high-risk vulnerabilities are found"
     required: false
@@ -32,12 +36,19 @@ runs:
         
         EXIT_CODE=0
         if [ -f "${{ github.action_path }}/dist/cli.js" ]; then
-          node "${{ github.action_path }}/dist/cli.js" audit "${{ inputs.target_dir }}" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+          CLI_EXEC="node ${{ github.action_path }}/dist/cli.js"
         elif [ -f "${{ github.action_path }}/package.json" ]; then
           (cd "${{ github.action_path }}" && npm install --silent && npm run build --silent)
-          node "${{ github.action_path }}/dist/cli.js" audit "${{ inputs.target_dir }}" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+          CLI_EXEC="node ${{ github.action_path }}/dist/cli.js"
         else
-          npx --yes @ritualdev-lab/mcp-builder-kit@latest audit "${{ inputs.target_dir }}" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+          CLI_EXEC="npx --yes @ritualdev-lab/mcp-builder-kit@latest"
+        fi
+
+        $CLI_EXEC audit "${{ inputs.target_dir }}" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+
+        if [ -n "${{ inputs.server_command }}" ]; then
+          echo -e "\n🔍 Running Live Protocol Conformance Gate (inspect --ci)..." >> .mcp-audit-report.txt
+          $CLI_EXEC inspect "${{ inputs.server_command }}" --ci >> .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
         fi
 
         echo "### ⚡ MCP Builder Kit Security & Conformance Gate" >> $GITHUB_STEP_SUMMARY
