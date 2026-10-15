@@ -161,10 +161,9 @@ console.log(`Generated artifacts: ${pkg.writtenFiles.join(", ")}`);
 
 `mcp-builder-kit` is open-source under Apache-2.0, with enterprise extensions, verified security certifications, and custom development available for production teams:
 
-- **Enterprise Connector Starters ($49)**: Pre-built production connectors for Postgres, Kubernetes, Stripe, and AWS with connection pooling and PII redaction (`npx @ritualdev-lab/mcp-builder-kit packs`).
-- **Verified Server Certification & Spotlight ($79)**: Cryptographic AgentShield zero-leak audit badge verified against repository commits, bundled with DevShelf directory showcase (`npx @ritualdev-lab/mcp-builder-kit badge <name>`).
-- **DevShelf Directory Spotlight ($149/mo)**: Standalone high-visibility directory placement and developer showcase across AI builders (`npx @ritualdev-lab/mcp-builder-kit spotlight <name>`).
-- **Turnkey B2B Engineering (From $1,750)**: Bespoke production MCP server engineering, private VPC networking, and SLA guarantees (`npx @ritualdev-lab/mcp-builder-kit turnkey starter`).
+- **Enterprise Tool Packs ($49/pack)**: Production-hardened tool templates for Postgres, Kubernetes, Snowflake, and AWS with connection pooling and parameter sanitization (`npx @ritualdev-lab/mcp-builder-kit packs`).
+- **Verified Server Certification & Spotlight ($79/server)**: Cryptographic AgentShield zero-leak audit badge verified against repository commits, bundled with DevShelf directory showcase (`npx @ritualdev-lab/mcp-builder-kit badge <name>`).
+- **Turnkey B2B Engineering (From $1,750/project)**: Bespoke production MCP server engineering, private VPC networking, and SLA guarantees (`npx @ritualdev-lab/mcp-builder-kit turnkey starter`).
 - **Ecosystem Grants & Bounties**: Connect to open-source foundation grant programs you can apply to ($1k–$25k) and funded developer bounties (`npx @ritualdev-lab/mcp-builder-kit grants`, `npx @ritualdev-lab/mcp-builder-kit bounties`).
 
 👉 **Explore full feature matrices and self-serve checkout at [mcp.ritualdev.in](https://mcp.ritualdev.in)**
