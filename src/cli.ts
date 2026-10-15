@@ -171,6 +171,11 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       } else if (arg === "--author" && args[i + 1]) {
         author = args[i + 1];
         i++;
+      } else if (arg === "--template" && args[i + 1]) {
+        if (args[i + 1].toLowerCase() === "devshelf") {
+          description = "DevShelf Public Directory & Verified Free Tools MCP Provider";
+        }
+        i++;
       }
     }
 
