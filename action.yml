@@ -16,9 +16,9 @@ inputs:
     required: false
     default: "true"
   github_token:
-    description: "GitHub secret token used to post PR review comments"
+    description: "GitHub secret token used to post PR review comments (defaults to github.token)"
     required: false
-    default: "${{ github.token }}"
+    default: ""
   post_pr_comment:
     description: "Whether to post an automated MCP protocol audit report on Pull Requests"
     required: false
@@ -30,7 +30,7 @@ runs:
     - name: Run MCP Security & Protocol Audit
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
       run: |
         echo "⚡ Running MCP Builder Kit Security & Protocol Audit..."
         
@@ -75,7 +75,7 @@ EOF
                 path: '/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments',
                 method: 'POST',
                 headers: {
-                  'Authorization': 'token ${{ inputs.github_token }}',
+                  'Authorization': `token ${process.env.GITHUB_TOKEN}`,
                   'User-Agent': 'MCP-Builder-Kit-Action',
                   'Content-Type': 'application/json',
                   'Content-Length': Buffer.byteLength(data)
