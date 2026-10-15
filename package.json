@@ -1,6 +1,6 @@
 {
   "name": "@ritualdev-lab/mcp-builder-kit",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "Production Toolkit & Scaffolding Engine for Model Context Protocol (MCP) Servers",
   "type": "module",
   "bin": {
