@@ -87,8 +87,8 @@ export class VerifiedMcpBadgeService {
     // Pricing & Checkout via Dodo Payments
     const checkoutUrl =
       tier === "sponsor"
-        ? `https://checkout.dodopayments.com/buy/pdt_agentshield_verified_badge?tool=${cleanSlug}&tier=sponsor&price=79`
-        : `https://checkout.dodopayments.com/buy/pdt_agentshield_verified_badge?tool=${cleanSlug}&tier=verified&price=29`;
+        ? `https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?tool=${cleanSlug}&tier=sponsor&price=79`
+        : `https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?tool=${cleanSlug}&tier=verified&price=29`;
 
     const label = "Verified MCP Server";
     const status = tier === "sponsor" ? "AgentShield ★ Sponsor" : "AgentShield Zero--Leak";

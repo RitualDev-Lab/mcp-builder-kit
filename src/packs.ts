@@ -15,7 +15,7 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
     type: "one_time",
     description:
       "Production-ready, connection-pooled MCP servers for Postgres, MongoDB, ClickHouse, Redis & Snowflake with read-only sandboxing.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_mcp_database_pack?quantity=1",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=database",
     features: [
       "Zero-overhead connection pooling with keep-alives",
       "Strict Read-Only query enforcement & AST safety parser",
@@ -31,14 +31,14 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
     ],
   },
   "cloud-devops-pack": {
-    id: "pdt_mcp_devops_pack",
+    id: "pdt_0NpjONEJnu5OcWhncWF68",
     name: "Cloud & Kubernetes DevOps MCP Pack",
     category: "devops",
     priceUsd: 49,
     type: "one_time",
     description:
       "Enterprise operational MCP toolkits for AWS, Google Cloud, Docker, Kubernetes & GitHub Actions with IAM least-privilege scoping.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_mcp_devops_pack?quantity=1",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=devops",
     features: [
       "Kubernetes pod/log inspection & rollout restart handlers",
       "AWS S3 presigned URL generator & CloudWatch query runner",
@@ -54,14 +54,14 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
     ],
   },
   "saas-fintech-pack": {
-    id: "pdt_mcp_fintech_pack",
+    id: "pdt_0NpjONEJnu5OcWhncWF68",
     name: "Fintech & SaaS Connector MCP Pack",
     category: "payments",
     priceUsd: 39,
     type: "one_time",
     description:
       "Secure toolkits for Stripe, Dodo Payments, HubSpot, Notion, and Slack with automated webhook verification and idempotent executions.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_mcp_fintech_pack?quantity=1",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=fintech",
     features: [
       "Stripe payment intent and customer subscription reader",
       "Dodo Payments self-serve checkout link generator",
@@ -76,14 +76,14 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
     ],
   },
   "all-access-bundle": {
-    id: "pdt_mcp_all_access",
+    id: "pdt_0NpjONEJnu5OcWhncWF68",
     name: "All-Access Enterprise MCP Bundle & Future Updates",
     category: "all_access",
     priceUsd: 99,
     type: "one_time",
     description:
       "Complete access to all current and future premium enterprise MCP starters, priority Discord support, and lifetime updates.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_mcp_all_access?quantity=1",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=all_access",
     features: [
       "Includes all Database, Cloud/DevOps, and Fintech/SaaS packs",
       "Lifetime updates and access to newly released enterprise packs",

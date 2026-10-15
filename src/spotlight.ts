@@ -13,7 +13,7 @@ export const DEVSHELF_MCP_SPOTLIGHT_TIERS: Record<string, DevShelfSpotlightTier>
     description:
       "Top sticky placement in the DevShelf MCP Directory, verified sponsor badge, and monthly newsletter highlight.",
     checkoutUrl:
-      "https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_featured_monthly?quantity=1",
+      "https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?placement=featured_monthly",
     features: [
       "Top sticky spotlight placement in DevShelf MCP Directory",
       "Official 'Featured on DevShelf' badge for repository",
@@ -23,13 +23,13 @@ export const DEVSHELF_MCP_SPOTLIGHT_TIERS: Record<string, DevShelfSpotlightTier>
     ],
   },
   "mcp-category-takeover": {
-    id: "pdt_devshelf_mcp_takeover",
+    id: "pdt_0NpjONGugY5QkrFDUaPva",
     name: "DevShelf MCP Category Exclusive Sponsor",
     priceUsd: 149,
     billingPeriod: "monthly",
     description:
       "Exclusive top banner banner takeover in your MCP category (Databases, DevOps, Search, or RAG) with direct user routing.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_devshelf_mcp_takeover?quantity=1",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?placement=category_takeover",
     features: [
       "Exclusive #1 header banner takeover in your specific category",
       "Everything in Featured Monthly tier included",

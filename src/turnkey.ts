@@ -14,7 +14,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
     description:
       "Ideal for startups or internal teams needing 1-3 REST/OpenAPI tools or custom database integrations packaged into a production MCP server.",
     depositCheckoutUrl:
-      "https://checkout.dodopayments.com/buy/pdt_turnkey_starter_deposit?tier=starter&deposit=250",
+      "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=starter&deposit=250",
     consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-starter",
     deliverables: [
       "1-3 Production Tools & Resources with Zod validation",
@@ -33,7 +33,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
     description:
       "Engineered for complex workflows: multiple third-party APIs, OAuth2/AuthN handling, dynamic resource streaming, and custom LLM sanitization.",
     depositCheckoutUrl:
-      "https://checkout.dodopayments.com/buy/pdt_turnkey_pro_deposit?tier=pro&deposit=750",
+      "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=pro&deposit=750",
     consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-pro",
     deliverables: [
       "Up to 10 Production Tools, Prompts & Live Streaming Resources",
@@ -53,7 +53,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
     description:
       "Full-scale bespoke enterprise server: proprietary internal microservices, private VPC networking, RBAC, air-gapped on-prem isolation, and SLA guarantee.",
     depositCheckoutUrl:
-      "https://checkout.dodopayments.com/buy/pdt_turnkey_enterprise_deposit?tier=enterprise&deposit=1750",
+      "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=enterprise&deposit=1750",
     consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-enterprise",
     deliverables: [
       "Unlimited Tools, Resources, Prompts, and Dynamic Subscriptions",
