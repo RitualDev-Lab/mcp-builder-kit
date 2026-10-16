@@ -5,6 +5,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
+import { getPythonCommand } from "./test-utils.js";
 
 describe("Phase 3: Uniform Base URL Path Resolution & Path Parameter Encoding Suite (M3)", () => {
   describe("TypeScript Base Path Preservation (No /v1 Dropping)", () => {
@@ -123,8 +124,11 @@ BASE_URL = "https://api.example.com/v1"
 ${pyCode}
 `;
 
+      const pythonCmd = getPythonCommand();
+      if (!pythonCmd) return;
+
       const result = execFileSync(
-        "python",
+        pythonCmd,
         ["-c", "import ast, sys; ast.parse(sys.stdin.read()); print('URL_PARITY_AST_OK')"],
         { input: harness, encoding: "utf-8" },
       ).trim();

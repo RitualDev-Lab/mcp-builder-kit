@@ -4,6 +4,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
+import { getPythonCommand } from "./test-utils.js";
 
 describe("Phase 4: Python Argument Ordering & Schema Hardening Suite (M4)", () => {
   describe("Python Argument Ordering Guarantee (M4)", () => {
@@ -54,8 +55,11 @@ BASE_URL = "https://api.store.example.com"
 ${pyCode}
 `;
 
+      const pythonCmd = getPythonCommand();
+      if (!pythonCmd) return;
+
       const result = execFileSync(
-        "python",
+        pythonCmd,
         ["-c", "import ast, sys; ast.parse(sys.stdin.read()); print('M4_SYNTAX_PERFECT')"],
         { input: harness, encoding: "utf-8" },
       ).trim();

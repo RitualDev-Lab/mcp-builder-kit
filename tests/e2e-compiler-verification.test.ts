@@ -9,18 +9,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
-
-function getPythonCommand(): string | null {
-  for (const cmd of ["python", "python3"]) {
-    try {
-      execFileSync(cmd, ["--version"], { stdio: "ignore" });
-      return cmd;
-    } catch {
-      // continue searching
-    }
-  }
-  return null;
-}
+import { getPythonCommand } from "./test-utils.js";
 
 function verifyTypeScriptCompilation(code: string): { errors: string[] } {
   const dummyFileName = "virtual-mcp-tools.ts";

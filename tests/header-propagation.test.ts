@@ -5,6 +5,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
+import { getPythonCommand } from "./test-utils.js";
 
 describe("Phase 2: Header Parameter Propagation & Request Body Isolation Suite (M2)", () => {
   const sampleHeaderTool: ToolDefinition = {
@@ -76,8 +77,11 @@ BASE_URL = "https://api.banking.example.com"
 ${pyCode}
 `;
 
+      const pythonCmd = getPythonCommand();
+      if (!pythonCmd) return;
+
       const result = execFileSync(
-        "python",
+        pythonCmd,
         ["-c", "import ast, sys; ast.parse(sys.stdin.read()); print('HEADER_AST_OK')"],
         { input: harness, encoding: "utf-8" },
       ).trim();

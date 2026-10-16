@@ -9,6 +9,7 @@ import {
 } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
+import { getPythonCommand } from "./test-utils.js";
 
 describe("Phase 1: Safe Parameter Identifier Mapping & Syntax Quoting (M1)", () => {
   describe("TypeScript formatPropertyKey", () => {
@@ -196,8 +197,11 @@ BASE_URL = "https://api.example.com"
 ${pyCode}
 `;
 
+      const pythonCmd = getPythonCommand();
+      if (!pythonCmd) return;
+
       const result = execFileSync(
-        "python",
+        pythonCmd,
         ["-c", "import ast, sys; ast.parse(sys.stdin.read()); print('SYNTAX_OK')"],
         { input: harness, encoding: "utf-8" }
       ).trim();
