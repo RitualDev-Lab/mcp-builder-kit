@@ -125,20 +125,41 @@ export class McpCodeGenerator {
     if (tool.apiEndpoint) {
       const ep = tool.apiEndpoint;
       const pathSubstitutions = (ep.pathParams || [])
-        .map((p) => `    requestPath = requestPath.replace("{${p}}", encodeURIComponent(String(args[${JSON.stringify(p)}] ?? "")));`)
+        .map((p) => {
+          const wireName = ep.wireParamMap?.[p] || p;
+          return `    requestPath = requestPath.replace("{${wireName}}", encodeURIComponent(String(args[${JSON.stringify(p)}] ?? "")));`;
+        })
         .join("\n");
 
       const queryAppenders = (ep.queryParams || [])
-        .map((q) => `    if (args[${JSON.stringify(q)}] !== undefined) { url.searchParams.set("${q}", String(args[${JSON.stringify(q)}])); }`)
+        .map((q) => {
+          const wireName = ep.wireParamMap?.[q] || q;
+          return `    if (args[${JSON.stringify(q)}] !== undefined) { url.searchParams.set(${JSON.stringify(wireName)}, String(args[${JSON.stringify(q)}])); }`;
+        })
+        .join("\n");
+
+      const headerAppenders = (ep.headerParams || [])
+        .map((h) => {
+          const wireName = ep.wireParamMap?.[h] || h;
+          return `    if (args[${JSON.stringify(h)}] !== undefined) { headers[${JSON.stringify(wireName)}] = String(args[${JSON.stringify(h)}]); }`;
+        })
         .join("\n");
 
       let bodyHandling = "const requestBody = undefined;";
       if (ep.hasBody) {
         const excludeProps = [...(ep.pathParams || []), ...(ep.queryParams || []), ...(ep.headerParams || [])];
         const deleteStatements = excludeProps.map((p) => `    delete (bodyPayload as any)[${JSON.stringify(p)}];`).join("\n");
+        const bodyRemaps = tool.parameters
+          .filter((p) => !excludeProps.includes(p.name) && ep.wireParamMap?.[p.name])
+          .map((p) => {
+            const wireName = ep.wireParamMap?.[p.name] || p.name;
+            return `    if ((bodyPayload as any)[${JSON.stringify(p.name)}] !== undefined) {\n      (bodyPayload as any)[${JSON.stringify(wireName)}] = (bodyPayload as any)[${JSON.stringify(p.name)}];\n      delete (bodyPayload as any)[${JSON.stringify(p.name)}];\n    }`;
+          })
+          .join("\n");
+
         bodyHandling = `headers["Content-Type"] = "application/json";
     const bodyPayload = { ...args };
-${deleteStatements}
+${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
     const requestBody = JSON.stringify(bodyPayload);`;
       }
 
@@ -154,7 +175,7 @@ ${queryAppenders ? `${queryAppenders}\n` : ""}
       Accept: "application/json",
       ...(process.env.API_KEY ? { Authorization: \`Bearer \${process.env.API_KEY}\` } : {}),
     };
-
+${headerAppenders ? `${headerAppenders}\n` : ""}
     // 4. Prepare request payload
     ${bodyHandling}
 
@@ -249,7 +270,13 @@ ${handlerBody}
   public static generatePythonTool(tool: ToolDefinition): string {
     const paramMap = buildPythonParameterMap(tool.parameters);
 
-    const fnArgs = tool.parameters
+    // Place all required parameters before optional parameters to avoid Python SyntaxError
+    const sortedParams = [...tool.parameters].sort((a, b) => {
+      if (Boolean(a.required) === Boolean(b.required)) return 0;
+      return a.required ? -1 : 1;
+    });
+
+    const fnArgs = sortedParams
       .map((p) => {
         const safeName = paramMap.get(p.name) || p.name;
         const pyType = McpCodeGenerator.toPythonType(p);
@@ -258,7 +285,7 @@ ${handlerBody}
       })
       .join(", ");
 
-    const docstringArgs = tool.parameters
+    const docstringArgs = sortedParams
       .map((p) => {
         const safeName = paramMap.get(p.name) || p.name;
         return `    ${safeName}: ${p.description || "Parameter"}`;
@@ -270,20 +297,30 @@ ${handlerBody}
       const ep = tool.apiEndpoint;
       const pathSubs = (ep.pathParams || [])
         .map((p) => {
+          const wireName = ep.wireParamMap?.[p] || p;
           const safeVar = paramMap.get(p) || p;
-          return `    endpoint_path = endpoint_path.replace("{${p}}", urllib.parse.quote(str(${safeVar}) if ${safeVar} is not None else ""))`;
+          return `    endpoint_path = endpoint_path.replace("{${wireName}}", urllib.parse.quote(str(${safeVar}) if ${safeVar} is not None else ""))`;
         })
         .join("\n");
 
       const queryEntries = (ep.queryParams || [])
         .map((q) => {
+          const wireName = ep.wireParamMap?.[q] || q;
           const safeVar = paramMap.get(q) || q;
-          return `"${q}": ${safeVar}`;
+          return `${JSON.stringify(wireName)}: ${safeVar}`;
         })
         .join(", ");
       const queryLogic = queryEntries
         ? `    query_params = {k: v for k, v in {${queryEntries}}.items() if v is not None}\n    if query_params:\n        full_url += "?" + urllib.parse.urlencode(query_params)`
         : "";
+
+      const headerEntries = (ep.headerParams || [])
+        .map((h) => {
+          const wireName = ep.wireParamMap?.[h] || h;
+          const safeVar = paramMap.get(h) || h;
+          return `    if ${safeVar} is not None:\n        headers[${JSON.stringify(wireName)}] = str(${safeVar})`;
+        })
+        .join("\n");
 
       let bodyLogic = "    req_body = None";
       if (ep.hasBody) {
@@ -291,8 +328,9 @@ ${handlerBody}
         const bodyParams = tool.parameters.filter((p) => !nonBody.has(p.name));
         const bodyEntries = bodyParams
           .map((p) => {
+            const wireName = ep.wireParamMap?.[p.name] || p.name;
             const safeVar = paramMap.get(p.name) || p.name;
-            return `"${p.name}": ${safeVar}`;
+            return `${JSON.stringify(wireName)}: ${safeVar}`;
           })
           .join(", ");
         bodyLogic = `    headers["Content-Type"] = "application/json"\n    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}\n    req_body = json.dumps(body_dict).encode("utf-8") if body_dict else None`;
@@ -316,7 +354,7 @@ ${queryLogic ? `${queryLogic}\n` : ""}
     api_key = os.environ.get("API_KEY")
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-
+${headerEntries ? `${headerEntries}\n` : ""}
     # 4. Prepare body payload
 ${bodyLogic}
 

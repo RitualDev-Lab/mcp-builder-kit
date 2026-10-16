@@ -80,17 +80,31 @@ export class OpenApiToMcpConverter {
         const pathParams: string[] = [];
         const queryParams: string[] = [];
         const headerParams: string[] = [];
+        const wireParamMap: Record<string, string> = {};
+        const seenParamNames = new Map<string, string>();
 
-        // Parse query / path parameters
+        // Parse query / path / header parameters
         if (Array.isArray(endpoint.parameters)) {
           for (const p of endpoint.parameters) {
             const loc = (p.in || "query").toLowerCase();
-            if (loc === "path") pathParams.push(p.name);
-            else if (loc === "query") queryParams.push(p.name);
-            else if (loc === "header") headerParams.push(p.name);
+            let argName = p.name;
+            if (seenParamNames.has(argName)) {
+              argName = `${p.name}_${loc}`;
+              let counter = 2;
+              while (seenParamNames.has(argName)) {
+                argName = `${p.name}_${loc}_${counter}`;
+                counter++;
+              }
+              wireParamMap[argName] = p.name;
+            }
+            seenParamNames.set(argName, loc);
+
+            if (loc === "path") pathParams.push(argName);
+            else if (loc === "query") queryParams.push(argName);
+            else if (loc === "header") headerParams.push(argName);
 
             parameters.push({
-              name: p.name,
+              name: argName,
               type: OpenApiToMcpConverter.normalizeType(p.schema?.type),
               description: p.description || `${p.in || "query"} parameter`,
               required: loc === "path" ? true : Boolean(p.required),
@@ -110,8 +124,20 @@ export class OpenApiToMcpConverter {
             const requiredSet = new Set(reqList);
             for (const [propName, propSchemaRaw] of Object.entries(resolvedSchema.properties as Record<string, unknown>)) {
               const propSchema = OpenApiToMcpConverter.resolveSchema(propSchemaRaw as Record<string, unknown>, spec);
+              let argName = propName;
+              if (seenParamNames.has(argName)) {
+                argName = `${propName}_body`;
+                let counter = 2;
+                while (seenParamNames.has(argName)) {
+                  argName = `${propName}_body_${counter}`;
+                  counter++;
+                }
+                wireParamMap[argName] = propName;
+              }
+              seenParamNames.set(argName, "body");
+
               parameters.push({
-                name: propName,
+                name: argName,
                 type: OpenApiToMcpConverter.normalizeType(propSchema.type as string),
                 description: (propSchema.description as string) || "Body field",
                 required: requiredSet.has(propName),
@@ -132,6 +158,7 @@ export class OpenApiToMcpConverter {
             headerParams,
             hasBody,
             baseUrlVar: "BASE_URL",
+            ...(Object.keys(wireParamMap).length > 0 ? { wireParamMap } : {}),
           },
         });
       }

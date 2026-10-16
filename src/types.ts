@@ -45,6 +45,7 @@ export interface ApiEndpointMetadata {
   headerParams?: string[];
   hasBody?: boolean;
   baseUrlVar?: string;
+  wireParamMap?: Record<string, string>;
 }
 
 export interface ToolDefinition {
