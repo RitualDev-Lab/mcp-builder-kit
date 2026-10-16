@@ -83,34 +83,57 @@ export class OpenApiToMcpConverter {
         const wireParamMap: Record<string, string> = {};
         const seenParamNames = new Map<string, string>();
 
-        // Parse query / path / header parameters
-        if (Array.isArray(endpoint.parameters)) {
-          for (const p of endpoint.parameters) {
-            const loc = (p.in || "query").toLowerCase();
-            let argName = p.name;
-            if (seenParamNames.has(argName)) {
-              argName = `${p.name}_${loc}`;
-              let counter = 2;
-              while (seenParamNames.has(argName)) {
-                argName = `${p.name}_${loc}_${counter}`;
-                counter++;
-              }
-              wireParamMap[argName] = p.name;
-            }
-            seenParamNames.set(argName, loc);
+        // Inherit path-item level parameters and merge with operation-level parameters
+        const pathLevelParams = Array.isArray((pathItem as Record<string, unknown>).parameters)
+          ? ((pathItem as Record<string, unknown>).parameters as Array<{
+              name: string;
+              in?: string;
+              description?: string;
+              required?: boolean;
+              schema?: { type?: string; default?: unknown };
+            }>)
+          : [];
+        const opLevelParams = Array.isArray(endpoint.parameters) ? endpoint.parameters : [];
 
-            if (loc === "path") pathParams.push(argName);
-            else if (loc === "query") queryParams.push(argName);
-            else if (loc === "header") headerParams.push(argName);
-
-            parameters.push({
-              name: argName,
-              type: OpenApiToMcpConverter.normalizeType(p.schema?.type),
-              description: p.description || `${p.in || "query"} parameter`,
-              required: loc === "path" ? true : Boolean(p.required),
-              default: p.schema?.default,
-            });
+        const combinedParamsMap = new Map<string, (typeof pathLevelParams)[0]>();
+        for (const p of pathLevelParams) {
+          if (p?.name) {
+            combinedParamsMap.set(`${(p.in || "query").toLowerCase()}:${p.name}`, p);
           }
+        }
+        for (const p of opLevelParams) {
+          if (p?.name) {
+            combinedParamsMap.set(`${(p.in || "query").toLowerCase()}:${p.name}`, p);
+          }
+        }
+        const combinedParameters = Array.from(combinedParamsMap.values());
+
+        // Parse query / path / header parameters
+        for (const p of combinedParameters) {
+          const loc = (p.in || "query").toLowerCase();
+          let argName = p.name;
+          if (seenParamNames.has(argName)) {
+            argName = `${p.name}_${loc}`;
+            let counter = 2;
+            while (seenParamNames.has(argName)) {
+              argName = `${p.name}_${loc}_${counter}`;
+              counter++;
+            }
+            wireParamMap[argName] = p.name;
+          }
+          seenParamNames.set(argName, loc);
+
+          if (loc === "path") pathParams.push(argName);
+          else if (loc === "query") queryParams.push(argName);
+          else if (loc === "header") headerParams.push(argName);
+
+          parameters.push({
+            name: argName,
+            type: OpenApiToMcpConverter.normalizeType(p.schema?.type),
+            description: p.description || `${p.in || "query"} parameter`,
+            required: loc === "path" ? true : Boolean(p.required),
+            default: p.schema?.default,
+          });
         }
 
         // Parse requestBody JSON properties with recursive $ref resolution
@@ -185,14 +208,24 @@ export class OpenApiToMcpConverter {
 
   /**
    * Resolves $ref pointers (e.g. #/components/schemas/Pet) against the root specification
+   * with circular reference cycle detection and allOf composition support.
    */
   public static resolveSchema(
     schema: Record<string, unknown>,
     rootSpec: Record<string, unknown>,
+    visited: Set<string> = new Set<string>(),
   ): Record<string, unknown> {
     if (!schema || typeof schema !== "object") return {};
+
+    // 1. Resolve $ref with circular reference cycle detection
     if (typeof schema.$ref === "string") {
       const refPath = schema.$ref;
+      if (visited.has(refPath)) {
+        // Break cycle safely on recursive / cyclic schemas
+        return { type: "object", description: `Circular reference to ${refPath}` };
+      }
+      visited.add(refPath);
+
       if (refPath.startsWith("#/")) {
         const parts = refPath.replace("#/", "").split("/");
         let current: unknown = rootSpec;
@@ -204,10 +237,34 @@ export class OpenApiToMcpConverter {
           }
         }
         if (current && typeof current === "object") {
-          return OpenApiToMcpConverter.resolveSchema(current as Record<string, unknown>, rootSpec);
+          return OpenApiToMcpConverter.resolveSchema(current as Record<string, unknown>, rootSpec, visited);
         }
       }
     }
+
+    // 2. Resolve allOf composition
+    if (Array.isArray(schema.allOf)) {
+      const merged: Record<string, unknown> = {
+        type: "object",
+        properties: {},
+        required: [],
+      };
+      for (const sub of schema.allOf) {
+        if (sub && typeof sub === "object") {
+          const resolvedSub = OpenApiToMcpConverter.resolveSchema(sub as Record<string, unknown>, rootSpec, visited);
+          if (resolvedSub && typeof resolvedSub === "object") {
+            if (resolvedSub.properties && typeof resolvedSub.properties === "object") {
+              Object.assign(merged.properties as Record<string, unknown>, resolvedSub.properties);
+            }
+            if (Array.isArray(resolvedSub.required)) {
+              (merged.required as string[]).push(...(resolvedSub.required as string[]));
+            }
+          }
+        }
+      }
+      return merged;
+    }
+
     return schema;
   }
 
