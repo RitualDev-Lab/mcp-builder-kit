@@ -311,7 +311,7 @@ ${conversion.generatedCode}
           is_active: true,
         };
 
-        let result: any;
+        let result: { content: Array<{ type: string; text: string }>; isError?: boolean } | undefined;
         try {
           const mod = await import(pathToFileURL(tmpFile).href);
           result = await mod.handleIngestTelemetry(testArgs);
