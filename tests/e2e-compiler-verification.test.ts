@@ -294,8 +294,14 @@ ${conversion.generatedCode}
         if (!existsSync(tmpDir)) {
           mkdirSync(tmpDir, { recursive: true });
         }
-        const tmpFile = join(tmpDir, `telemetry-${Date.now()}.ts`);
-        writeFileSync(tmpFile, conversion.generatedCode, "utf8");
+        const tmpFile = join(tmpDir, `telemetry-${Date.now()}.mjs`);
+        const transpiled = ts.transpileModule(conversion.generatedCode, {
+          compilerOptions: {
+            target: ts.ScriptTarget.ES2022,
+            module: ts.ModuleKind.ESNext,
+          },
+        }).outputText;
+        writeFileSync(tmpFile, transpiled, "utf8");
 
         const originalApiKey = process.env.API_KEY;
         const originalBaseUrl = process.env.API_BASE_URL;
