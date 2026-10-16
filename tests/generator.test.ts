@@ -139,9 +139,7 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
           get: {
             operationId: "get_pet_by_id",
             summary: "Get pet by ID",
-            parameters: [
-              { name: "petId", in: "path", schema: { type: "string" }, required: true },
-            ],
+            parameters: [{ name: "petId", in: "path", schema: { type: "string" }, required: true }],
           },
         },
       },

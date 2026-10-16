@@ -129,7 +129,11 @@ describe("Phase 1: Safe Parameter Identifier Mapping & Syntax Quoting (M1)", () 
       assert.ok(tsCode.includes('args["class"]'));
 
       // Path parameter replacement with wire name
-      assert.ok(tsCode.includes('.replaceAll("{item-id}", encodeURIComponent(String(args["item-id"] ?? "")))'));
+      assert.ok(
+        tsCode.includes(
+          '.replaceAll("{item-id}", encodeURIComponent(String(args["item-id"] ?? "")))',
+        ),
+      );
 
       // Payload exclusions use bracket access
       assert.ok(tsCode.includes('delete (bodyPayload as any)["item-id"]'));
@@ -171,7 +175,9 @@ describe("Phase 1: Safe Parameter Identifier Mapping & Syntax Quoting (M1)", () 
       assert.ok(pyCode.includes("user_id_2: str = None"));
 
       // Check path replacement preserves wire token and uses safe variable
-      assert.ok(pyCode.includes('endpoint_path.replace("{catalog-id}", urllib.parse.quote(str(catalog_id)'));
+      assert.ok(
+        pyCode.includes('endpoint_path.replace("{catalog-id}", urllib.parse.quote(str(catalog_id)'),
+      );
 
       // Check query params dictionary maps wire name to safe variable
       assert.ok(pyCode.includes('"api-key": api_key'));
@@ -203,7 +209,7 @@ ${pyCode}
       const result = execFileSync(
         pythonCmd,
         ["-c", "import ast, sys; ast.parse(sys.stdin.read()); print('SYNTAX_OK')"],
-        { input: harness, encoding: "utf-8" }
+        { input: harness, encoding: "utf-8" },
       ).trim();
 
       assert.strictEqual(result, "SYNTAX_OK");

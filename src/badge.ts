@@ -30,10 +30,7 @@ export class VerifiedMcpBadgeService {
     // Default to a 10-minute epoch window if not explicitly provided
     const ts = auditMetadata.timestamp || Math.floor(Date.now() / 600000) * 600000;
     const payload = `mcp|${serverName.toLowerCase().trim()}|${tier}|${sha}|${score}|${ts}`;
-    return createHmac("sha256", secret)
-      .update(payload)
-      .digest("hex")
-      .slice(0, 16);
+    return createHmac("sha256", secret).update(payload).digest("hex").slice(0, 16);
   }
 
   /**

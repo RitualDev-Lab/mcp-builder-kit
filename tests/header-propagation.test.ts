@@ -33,10 +33,14 @@ describe("Phase 2: Header Parameter Propagation & Request Body Isolation Suite (
 
       // Header assignments exist
       assert.ok(
-        tsCode.includes('if (args["X-Trace-Id"] !== undefined) { headers["X-Trace-Id"] = String(args["X-Trace-Id"]); }'),
+        tsCode.includes(
+          'if (args["X-Trace-Id"] !== undefined) { headers["X-Trace-Id"] = String(args["X-Trace-Id"]); }',
+        ),
       );
       assert.ok(
-        tsCode.includes('if (args["X-Client-Version"] !== undefined) { headers["X-Client-Version"] = String(args["X-Client-Version"]); }'),
+        tsCode.includes(
+          'if (args["X-Client-Version"] !== undefined) { headers["X-Client-Version"] = String(args["X-Client-Version"]); }',
+        ),
       );
 
       // Header parameters are explicitly deleted from bodyPayload
@@ -51,8 +55,16 @@ describe("Phase 2: Header Parameter Propagation & Request Body Isolation Suite (
       const pyCode = McpCodeGenerator.generatePythonTool(sampleHeaderTool);
 
       // Python headers mapping
-      assert.ok(pyCode.includes('if x_trace_id is not None:\n        headers["X-Trace-Id"] = str(x_trace_id)'));
-      assert.ok(pyCode.includes('if x_client_version is not None:\n        headers["X-Client-Version"] = str(x_client_version)'));
+      assert.ok(
+        pyCode.includes(
+          'if x_trace_id is not None:\n        headers["X-Trace-Id"] = str(x_trace_id)',
+        ),
+      );
+      assert.ok(
+        pyCode.includes(
+          'if x_client_version is not None:\n        headers["X-Client-Version"] = str(x_client_version)',
+        ),
+      );
 
       // Python body only contains amount and currency
       assert.ok(pyCode.includes('"amount": amount'));
@@ -143,10 +155,20 @@ ${pyCode}
       assert.strictEqual(tool.apiEndpoint.wireParamMap.id_body, "id");
 
       // Verify TypeScript generated code binds each parameter to its wire location
-      assert.ok(result.generatedCode.includes('.replaceAll("{id}", encodeURIComponent(String(args["id"] ?? "")))'));
-      assert.ok(result.generatedCode.includes('url.searchParams.set("id", String(args["id_query"]))'));
+      assert.ok(
+        result.generatedCode.includes(
+          '.replaceAll("{id}", encodeURIComponent(String(args["id"] ?? "")))',
+        ),
+      );
+      assert.ok(
+        result.generatedCode.includes('url.searchParams.set("id", String(args["id_query"]))'),
+      );
       assert.ok(result.generatedCode.includes('headers["id"] = String(args["id_header"])'));
-      assert.ok(result.generatedCode.includes('(bodyPayload as any)["id"] = (bodyPayload as any)["id_body"]'));
+      assert.ok(
+        result.generatedCode.includes(
+          '(bodyPayload as any)["id"] = (bodyPayload as any)["id_body"]',
+        ),
+      );
     });
 
     test("Python generator binds disambiguated same-name parameters to correct wire keys", () => {
@@ -156,7 +178,11 @@ ${pyCode}
         baseUrl: "https://api.example.com",
       });
 
-      assert.ok(result.generatedCode.includes("def sync_organization(id_: str, id_body: str, name: str, id_query: str = None, id_header: str = None) -> str:"));
+      assert.ok(
+        result.generatedCode.includes(
+          "def sync_organization(id_: str, id_body: str, name: str, id_query: str = None, id_header: str = None) -> str:",
+        ),
+      );
       assert.ok(result.generatedCode.includes('"id": id_query'));
       assert.ok(result.generatedCode.includes('headers["id"] = str(id_header)'));
       assert.ok(result.generatedCode.includes('"id": id_body'));

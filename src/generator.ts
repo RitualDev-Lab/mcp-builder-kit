@@ -2,20 +2,91 @@ import type { ResourceDefinition, ToolDefinition, ToolParameter } from "./types.
 
 export const PYTHON_RESERVED_KEYWORDS = new Set([
   // Python syntax keywords
-  "False", "None", "True", "and", "as", "assert", "async", "await",
-  "break", "class", "continue", "def", "del", "elif", "else", "except",
-  "finally", "for", "from", "global", "if", "import", "in", "is",
-  "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try",
-  "while", "with", "yield", "match", "case",
+  "False",
+  "None",
+  "True",
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "nonlocal",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "try",
+  "while",
+  "with",
+  "yield",
+  "match",
+  "case",
   // Common built-ins that should not be shadowed
-  "type", "id", "format", "input", "list", "dict", "set", "int", "float", "str", "bool",
+  "type",
+  "id",
+  "format",
+  "input",
+  "list",
+  "dict",
+  "set",
+  "int",
+  "float",
+  "str",
+  "bool",
 ]);
 
 export const JS_RESERVED_KEYWORDS = new Set([
-  "break", "case", "catch", "class", "const", "continue", "debugger", "default",
-  "delete", "do", "else", "export", "extends", "finally", "for", "function",
-  "if", "import", "in", "instanceof", "new", "return", "super", "switch",
-  "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "new",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
 ]);
 
 /**
@@ -70,6 +141,22 @@ export function buildPythonParameterMap(parameters: ToolParameter[]): Map<string
 }
 
 /**
+ * Safely escapes a string for inclusion inside Python triple-double-quoted docstrings (""").
+ * Prevents premature docstring termination, injection of unescaped quotes, and syntax errors.
+ */
+export function escapePythonDocstring(text: string): string {
+  if (!text) return "";
+  let escaped = text.replace(/\r\n/g, "\n");
+  escaped = escaped.replace(/"""/g, '\\"\\"\\"');
+  // If the string ends with an unescaped quote, escape it so it doesn't merge with the closing """
+  // In Python, """..."""" is a SyntaxError.
+  if (/(?<!\\)(?:\\\\)*"$/.test(escaped)) {
+    escaped = `${escaped.slice(0, -1)}\\"`;
+  }
+  return escaped;
+}
+
+/**
  * Formats a TypeScript/JavaScript object property key, adding quotes if not a valid identifier.
  */
 export function formatPropertyKey(name: string): string {
@@ -87,6 +174,7 @@ export class McpCodeGenerator {
   public static toSafePythonIdentifier = toSafePythonIdentifier;
   public static buildPythonParameterMap = buildPythonParameterMap;
   public static formatPropertyKey = formatPropertyKey;
+  public static escapePythonDocstring = escapePythonDocstring;
 
   /**
    * Generates a TypeScript tool handler snippet using Zod and Mcp Server SDK
@@ -147,8 +235,14 @@ export class McpCodeGenerator {
 
       let bodyHandling = "const requestBody = undefined;";
       if (ep.hasBody) {
-        const excludeProps = [...(ep.pathParams || []), ...(ep.queryParams || []), ...(ep.headerParams || [])];
-        const deleteStatements = excludeProps.map((p) => `    delete (bodyPayload as any)[${JSON.stringify(p)}];`).join("\n");
+        const excludeProps = [
+          ...(ep.pathParams || []),
+          ...(ep.queryParams || []),
+          ...(ep.headerParams || []),
+        ];
+        const deleteStatements = excludeProps
+          .map((p) => `    delete (bodyPayload as any)[${JSON.stringify(p)}];`)
+          .join("\n");
         const bodyRemaps = tool.parameters
           .filter((p) => !excludeProps.includes(p.name) && ep.wireParamMap?.[p.name])
           .map((p) => {
@@ -164,7 +258,8 @@ ${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
       }
 
       const authHeaderName = ep.authHeader?.name || "Authorization";
-      const authHeaderPrefix = ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
+      const authHeaderPrefix =
+        ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
       const authValExpression = authHeaderPrefix
         ? `\`${authHeaderPrefix}\${process.env.API_KEY}\``
         : "process.env.API_KEY";
@@ -301,7 +396,11 @@ ${handlerBody}
     const docstringArgs = sortedParams
       .map((p) => {
         const safeName = paramMap.get(p.name) || p.name;
-        return `    ${safeName}: ${p.description || "Parameter"}`;
+        const desc = escapePythonDocstring(p.description || "Parameter").replace(
+          /\n/g,
+          "\n        ",
+        );
+        return `    ${safeName}: ${desc}`;
       })
       .join("\n");
 
@@ -337,7 +436,11 @@ ${handlerBody}
 
       let bodyLogic = "    req_body = None";
       if (ep.hasBody) {
-        const nonBody = new Set([...(ep.pathParams || []), ...(ep.queryParams || []), ...(ep.headerParams || [])]);
+        const nonBody = new Set([
+          ...(ep.pathParams || []),
+          ...(ep.queryParams || []),
+          ...(ep.headerParams || []),
+        ]);
         const bodyParams = tool.parameters.filter((p) => !nonBody.has(p.name));
         const bodyEntries = bodyParams
           .map((p) => {
@@ -350,10 +453,9 @@ ${handlerBody}
       }
 
       const authHeaderName = ep.authHeader?.name || "Authorization";
-      const authHeaderPrefix = ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
-      const authPyVal = authHeaderPrefix
-        ? `f"${authHeaderPrefix}{api_key}"`
-        : "str(api_key)";
+      const authHeaderPrefix =
+        ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
+      const authPyVal = authHeaderPrefix ? `f"${authHeaderPrefix}{api_key}"` : "str(api_key)";
 
       pyBody = `    import json
     import os
@@ -399,10 +501,11 @@ ${bodyLogic}
     }
 
     const toolFnName = toSafePythonIdentifier(tool.name);
+    const safeToolDesc = escapePythonDocstring(tool.description);
     return `
 @mcp.tool()
 def ${toolFnName}(${fnArgs}) -> str:
-    """${tool.description}
+    """${safeToolDesc}
 
     Args:
 ${docstringArgs}
@@ -471,16 +574,24 @@ export async function read${toPascalCase(resource.name)}Resource(): Promise<{
   }
 }
 
-function toCamelCase(str: string): string {
-  const pascal = toPascalCase(str);
-  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
-}
-
-function toPascalCase(str: string): string {
-  return str
+export function toPascalCase(str: string): string {
+  let res = str
     .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase())
     .replace(/^[a-z]/, (c) => c.toUpperCase())
     .replace(/[^a-zA-Z0-9]/g, "");
+
+  if (!res) {
+    res = "Tool";
+  }
+  if (/^[0-9]/.test(res)) {
+    res = `Mcp${res}`;
+  }
+  return res;
+}
+
+export function toCamelCase(str: string): string {
+  const pascal = toPascalCase(str);
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
 function toSnakeCase(str: string): string {

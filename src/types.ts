@@ -76,6 +76,7 @@ export interface OpenApiConversionOptions {
 export interface OpenApiConversionResult {
   tools: ToolDefinition[];
   generatedCode: string;
+  warnings?: string[];
 }
 
 export interface McpJsonRpcRequest {
@@ -278,4 +279,3 @@ export interface GrantsAndBountiesCatalog {
   githubSponsorsUrl: string;
   polarBountiesUrl: string;
 }
-

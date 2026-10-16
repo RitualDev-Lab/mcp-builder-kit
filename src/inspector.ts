@@ -231,7 +231,9 @@ export class McpServerInspector {
             conformanceChecks.push({
               name: "Resource Discovery ('resources/list')",
               passed: false,
-              details: resRes.error?.message || "Resources advertised in capabilities but resources/list failed",
+              details:
+                resRes.error?.message ||
+                "Resources advertised in capabilities but resources/list failed",
             });
           }
         } catch (err: unknown) {

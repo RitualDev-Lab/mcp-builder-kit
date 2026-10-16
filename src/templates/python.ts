@@ -1,14 +1,26 @@
-import type { McpScaffoldOptions, GeneratedFile } from "../types.js";
+import { escapePythonDocstring } from "../generator.js";
+import type { GeneratedFile, McpScaffoldOptions } from "../types.js";
+
+export function toSafePythonPackageName(name: string): string {
+  let pkg = name.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/^_+|_+$/g, "");
+  if (!pkg) {
+    pkg = "mcp_server";
+  }
+  if (/^[0-9]/.test(pkg)) {
+    pkg = `mcp_${pkg}`;
+  }
+  return pkg;
+}
 
 export function generatePythonTemplate(options: McpScaffoldOptions): GeneratedFile[] {
-  const name = options.projectName.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const name = toSafePythonPackageName(options.projectName);
   const description = options.description || "High-performance FastMCP Server in Python";
   const author = options.author || "RitualDev Lab";
 
   const pyprojectToml = `[project]
 name = "${name}"
 version = "0.1.0"
-description = "${description}"
+description = "${description.replace(/"/g, '\\"')}"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -26,7 +38,7 @@ build-backend = "hatchling.build"
 
   const serverPy = `"""
 ${name} - Model Context Protocol Server
-${description}
+${escapePythonDocstring(description)}
 """
 import os
 import sys

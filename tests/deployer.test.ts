@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe, after } from "node:test";
-import { McpServerDeployer } from "../src/deployer.js";
 import { McpVisualInspectorServer } from "../src/dashboard.js";
+import { McpServerDeployer } from "../src/deployer.js";
 
 describe("Serverless Deployer & Visual Inspector Suite", () => {
   const tmpDeployDir = join(process.cwd(), ".tmp_test_deployer");

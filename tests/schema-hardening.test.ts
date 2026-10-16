@@ -243,7 +243,11 @@ ${pyCode}
       assert.ok(createTask.apiEndpoint?.pathParams?.includes("projectId"));
 
       // Verify generated TypeScript handler properly replaces the inherited path param
-      assert.ok(conversion.generatedCode.includes('.replaceAll("{projectId}", encodeURIComponent(String(args["projectId"] ?? "")))'));
+      assert.ok(
+        conversion.generatedCode.includes(
+          '.replaceAll("{projectId}", encodeURIComponent(String(args["projectId"] ?? "")))',
+        ),
+      );
     });
 
     test("allows operation-level parameter to override path-level parameter with same name", () => {

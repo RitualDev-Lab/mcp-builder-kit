@@ -2,6 +2,7 @@ import type { McpScaffoldOptions, GeneratedFile } from "../types.js";
 
 export function generateTypeScriptTemplate(options: McpScaffoldOptions): GeneratedFile[] {
   const name = options.projectName.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+  const className = toSafeClassName(options.projectName);
   const description = options.description || "High-performance Model Context Protocol (MCP) server";
   const author = options.author || "RitualDev Lab";
   const transport = options.transport || "stdio";
@@ -108,7 +109,7 @@ import { z } from "zod";
  * ${name} - Model Context Protocol Server
  * ${description}
  */
-export class ${toPascalCase(name)}Server {
+export class ${className} {
   private server: Server;
 
   constructor() {
@@ -252,7 +253,7 @@ export class ${toPascalCase(name)}Server {
 }
 
 // Direct execution entrypoint
-const server = new ${toPascalCase(name)}Server();
+const server = new ${className}();
 server.start().catch((err) => {
   console.error("Fatal startup error:", err);
   process.exit(1);
@@ -261,11 +262,11 @@ server.start().catch((err) => {
 
   const testFile = `import assert from "node:assert/strict";
 import test, { describe } from "node:test";
-import { ${toPascalCase(name)}Server } from "../src/index.js";
+import { ${className} } from "../src/index.js";
 
 describe("${name} MCP Server Test Suite", () => {
   test("initializes server instance correctly", () => {
-    const instance = new ${toPascalCase(name)}Server();
+    const instance = new ${className}();
     assert.ok(instance, "Server instance should construct successfully");
   });
 });
@@ -350,8 +351,20 @@ MIT © ${author}
   ];
 }
 
-function toPascalCase(str: string): string {
-  return str
-    .replace(/[-_](.)/g, (_, c) => c.toUpperCase())
-    .replace(/^(.)/, (c) => c.toUpperCase());
+export function toSafeClassName(str: string): string {
+  let pascal = str
+    .replace(/[^a-zA-Z0-9_-]/g, " ")
+    .trim()
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join("");
+
+  if (!pascal) {
+    pascal = "Mcp";
+  }
+  if (/^[0-9]/.test(pascal)) {
+    pascal = `Mcp${pascal}`;
+  }
+  return `${pascal}Server`;
 }

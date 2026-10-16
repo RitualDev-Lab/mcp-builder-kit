@@ -29,7 +29,8 @@ export const DEVSHELF_MCP_SPOTLIGHT_TIERS: Record<string, DevShelfSpotlightTier>
     billingPeriod: "monthly",
     description:
       "Exclusive top banner banner takeover in your MCP category (Databases, DevOps, Search, or RAG) with direct user routing.",
-    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?placement=category_takeover",
+    checkoutUrl:
+      "https://checkout.dodopayments.com/buy/pdt_0NpjONGugY5QkrFDUaPva?placement=category_takeover",
     features: [
       "Exclusive #1 header banner takeover in your specific category",
       "Everything in Featured Monthly tier included",

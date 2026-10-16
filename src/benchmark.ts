@@ -134,7 +134,7 @@ export const McpBenchmarkEngine = {
     const totalTimeMs = Date.now() - start;
     const avgConversionMs = conversionTimeMs / iterations;
     const avgToolGenMs = toolGenTimeMs / (iterations * 10);
-    const throughputEndpointsPerSec = Math.round((totalEndpoints / (conversionTimeMs / 1000)) || 0);
+    const throughputEndpointsPerSec = Math.round(totalEndpoints / (conversionTimeMs / 1000) || 0);
 
     return {
       iterations,

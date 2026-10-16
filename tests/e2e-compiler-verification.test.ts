@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createServer, type Server } from "node:http";
+import { type Server, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import test, { describe } from "node:test";
@@ -163,7 +163,9 @@ describe("Phase 5: End-to-End Compiler Verification & Release Standards Suite", 
       assert.ok(content.includes("7. Disclaimer of Warranty."));
       assert.ok(content.includes("8. Limitation of Liability."));
       assert.ok(content.includes("9. Accepting Warranty or Additional Liability."));
-      assert.ok(content.includes("Copyright 2026 RitualDev Lab (https://github.com/RitualDev-Lab)"));
+      assert.ok(
+        content.includes("Copyright 2026 RitualDev Lab (https://github.com/RitualDev-Lab)"),
+      );
       assert.ok(content.lines ? content.lines().length > 150 : content.split("\n").length > 150);
     });
   });
@@ -192,7 +194,11 @@ describe("Phase 5: End-to-End Compiler Verification & Release Standards Suite", 
 
       // In-memory TypeScript compiler verification: must compile with 0 diagnostics
       const { errors } = verifyTypeScriptCompilation(conversion.generatedCode);
-      assert.deepStrictEqual(errors, [], `TypeScript compiler reported diagnostics: ${errors.join("; ")}`);
+      assert.deepStrictEqual(
+        errors,
+        [],
+        `TypeScript compiler reported diagnostics: ${errors.join("; ")}`,
+      );
     });
   });
 
@@ -209,7 +215,9 @@ describe("Phase 5: End-to-End Compiler Verification & Release Standards Suite", 
       const ingestTool = conversion.tools.find((t) => t.name === "ingest_telemetry");
       assert.ok(ingestTool);
       assert.ok(conversion.generatedCode.includes("def ingest_telemetry("));
-      assert.ok(conversion.generatedCode.includes("urllib.parse.urlencode(query_params, doseq=True)"));
+      assert.ok(
+        conversion.generatedCode.includes("urllib.parse.urlencode(query_params, doseq=True)"),
+      );
       assert.ok(conversion.generatedCode.includes('headers["X-Fleet-Token"] = str(api_key)'));
 
       const pythonCmd = getPythonCommand();
@@ -317,7 +325,9 @@ ${conversion.generatedCode}
           is_active: true,
         };
 
-        let result: { content: Array<{ type: string; text: string }>; isError?: boolean } | undefined;
+        let result:
+          | { content: Array<{ type: string; text: string }>; isError?: boolean }
+          | undefined;
         try {
           const mod = await import(pathToFileURL(tmpFile).href);
           result = await mod.handleIngestTelemetry(testArgs);

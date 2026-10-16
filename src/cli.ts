@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import * as readline from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 import { McpCodeGenerator } from "./generator.js";
 import { OpenApiToMcpConverter } from "./openapi.js";
 import { McpProjectScaffolder } from "./scaffolder.js";
@@ -122,7 +122,11 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   // 1. mcp-builder init
   if (command === "init") {
     let projectName = args[1];
-    const isInteractiveFlag = args.includes("--interactive") || args.includes("-i") || !projectName || projectName.startsWith("-");
+    const isInteractiveFlag =
+      args.includes("--interactive") ||
+      args.includes("-i") ||
+      !projectName ||
+      projectName.startsWith("-");
 
     let language: McpLanguage = "typescript";
     let transport: McpTransport = "stdio";
@@ -130,7 +134,13 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     let description = "High-performance Model Context Protocol (MCP) server";
     let author = "RitualDev Lab";
 
-    if (isInteractiveFlag && (!projectName || projectName.startsWith("-") || args.includes("--interactive") || args.includes("-i"))) {
+    if (
+      isInteractiveFlag &&
+      (!projectName ||
+        projectName.startsWith("-") ||
+        args.includes("--interactive") ||
+        args.includes("-i"))
+    ) {
       console.log("\n🧙 Welcome to the Interactive MCP Server Wizard!\n");
       const rl = readline.createInterface({ input, output });
       try {
@@ -140,7 +150,10 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         }
 
         const ansLang = await rl.question("? Language [1: TypeScript (default), 2: Python]: ");
-        language = ansLang.trim() === "2" || ansLang.toLowerCase().includes("python") ? "python" : "typescript";
+        language =
+          ansLang.trim() === "2" || ansLang.toLowerCase().includes("python")
+            ? "python"
+            : "typescript";
 
         const ansTrans = await rl.question("? Transport [1: stdio (default), 2: sse, 3: both]: ");
         const transTrim = ansTrans.trim();
@@ -755,7 +768,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       console.log(`  Focus Area:     ${g.focusArea}`);
       console.log(`  Application:    👉 ${g.applicationUrl}\n`);
     }
-    console.log("Tip: Run 'mcp-builder grants <grant-id>' to generate a targeted narrative pitch.\n");
+    console.log(
+      "Tip: Run 'mcp-builder grants <grant-id>' to generate a targeted narrative pitch.\n",
+    );
     console.log("========================================================================\n");
     return;
   }
@@ -767,7 +782,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log("\n💰 Active Open-Source Developer Bounties & Community Rewards:");
     console.log("========================================================================\n");
     for (const b of catalog.bounties) {
-      console.log(`• [${b.difficulty.toUpperCase()}] ${b.title} — $${b.rewardUsd.toLocaleString()}`);
+      console.log(
+        `• [${b.difficulty.toUpperCase()}] ${b.title} — $${b.rewardUsd.toLocaleString()}`,
+      );
       console.log(`  Category:    ${b.category} | Sponsor: ${b.sponsor}`);
       console.log(`  Summary:     ${b.description}`);
       console.log(`  Claim Issue: 👉 ${b.claimUrl}\n`);
@@ -792,7 +809,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         if (tVal === "cloudflare-workers" || tVal === "cloud-run") {
           target = tVal;
         } else {
-          console.error(`❌ Error: Invalid target '${args[i + 1]}'. Choose 'cloudflare-workers' or 'cloud-run'.`);
+          console.error(
+            `❌ Error: Invalid target '${args[i + 1]}'. Choose 'cloudflare-workers' or 'cloud-run'.`,
+          );
           process.exit(1);
         }
         i++;
@@ -861,17 +880,27 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       }
     }
 
-    console.log(`\n⚡ [mcp-builder-kit] Running OpenAPI conversion & scaffolding benchmark (${iterations} iterations)...`);
+    console.log(
+      `\n⚡ [mcp-builder-kit] Running OpenAPI conversion & scaffolding benchmark (${iterations} iterations)...`,
+    );
     const { McpBenchmarkEngine } = await import("./benchmark.js");
     const metrics = McpBenchmarkEngine.runBenchmark(iterations);
 
     console.log("┌──────────────────────────────────────────────────────────────┐");
     console.log("│ 📊 Performance Benchmark Metrics:                            │");
-    console.log(`│   Total Endpoints Converted:   ${String(metrics.openApiEndpointsConverted).padEnd(29)} │`);
+    console.log(
+      `│   Total Endpoints Converted:   ${String(metrics.openApiEndpointsConverted).padEnd(29)} │`,
+    );
     console.log(`│   Total Benchmark Time:        ${`${metrics.totalTimeMs}ms`.padEnd(29)} │`);
-    console.log(`│   Avg Conversion Latency:      ${`${metrics.avgConversionMs.toFixed(2)}ms`.padEnd(29)} │`);
-    console.log(`│   Avg Tool Gen Latency:        ${`${metrics.avgToolGenMs.toFixed(3)}ms`.padEnd(29)} │`);
-    console.log(`│   Conversion Throughput:       ${`${metrics.throughputEndpointsPerSec} endpoints/s`.padEnd(29)} │`);
+    console.log(
+      `│   Avg Conversion Latency:      ${`${metrics.avgConversionMs.toFixed(2)}ms`.padEnd(29)} │`,
+    );
+    console.log(
+      `│   Avg Tool Gen Latency:        ${`${metrics.avgToolGenMs.toFixed(3)}ms`.padEnd(29)} │`,
+    );
+    console.log(
+      `│   Conversion Throughput:       ${`${metrics.throughputEndpointsPerSec} endpoints/s`.padEnd(29)} │`,
+    );
     console.log("└──────────────────────────────────────────────────────────────┘");
 
     if (metrics.passed) {

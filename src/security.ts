@@ -126,7 +126,11 @@ export class AgentShieldMcpAuditor {
           if (tokenMatches) {
             for (const t of tokenMatches) {
               const rawStr = t.slice(1, -1);
-              if (rawStr.startsWith("http://") || rawStr.startsWith("https://") || rawStr.includes(" ")) {
+              if (
+                rawStr.startsWith("http://") ||
+                rawStr.startsWith("https://") ||
+                rawStr.includes(" ")
+              ) {
                 continue;
               }
               const isPureHex = /^[0-9a-fA-F]+$/.test(rawStr);
@@ -148,7 +152,8 @@ export class AgentShieldMcpAuditor {
                     line: lineIdx + 1,
                     snippet: line.trim().slice(0, 80),
                     description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)}${isPureHex ? " [hex]" : ""})`,
-                    remediation: "Move high-entropy API key or token to process.env or a secret vault",
+                    remediation:
+                      "Move high-entropy API key or token to process.env or a secret vault",
                   });
                 }
               }
@@ -293,4 +298,3 @@ def sanitize_mcp_param(param, allow_absolute=True, base_dir=None):
     return entropy;
   }
 }
-

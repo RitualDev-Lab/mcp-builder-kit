@@ -247,8 +247,12 @@ spec:
       writeFileSync(serviceYamlPath, cloudRunYaml, "utf8");
       filesGenerated.push("Dockerfile.cloudrun", "cloudrun-service.yaml");
 
-      instructions.push(`1. Build image: gcloud builds submit --tag gcr.io/PROJECT_ID/${projectName}`);
-      instructions.push(`2. Deploy to Cloud Run: gcloud run deploy ${projectName} --image gcr.io/PROJECT_ID/${projectName} --platform managed --allow-unauthenticated`);
+      instructions.push(
+        `1. Build image: gcloud builds submit --tag gcr.io/PROJECT_ID/${projectName}`,
+      );
+      instructions.push(
+        `2. Deploy to Cloud Run: gcloud run deploy ${projectName} --image gcr.io/PROJECT_ID/${projectName} --platform managed --allow-unauthenticated`,
+      );
     }
 
     return {

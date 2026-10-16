@@ -31,9 +31,17 @@ describe("Phase 3: Uniform Base URL Path Resolution & Path Parameter Encoding Su
       // Verify the generated code constructs URL using cleanBasePath and cleanRequestPath
       assert.ok(tsCode.includes('const cleanBasePath = BASE_URL.replace(/\\/+$/, "");'));
       assert.ok(tsCode.includes('const cleanRequestPath = requestPath.replace(/^\\/+/, "");'));
-      assert.ok(tsCode.includes("const fullUrl = cleanRequestPath ? `${cleanBasePath}/${cleanRequestPath}` : cleanBasePath;"));
+      assert.ok(
+        tsCode.includes(
+          "const fullUrl = cleanRequestPath ? `${cleanBasePath}/${cleanRequestPath}` : cleanBasePath;",
+        ),
+      );
       assert.ok(tsCode.includes("const url = new URL(fullUrl);"));
-      assert.ok(tsCode.includes('requestPath.replaceAll("{pet_id}", encodeURIComponent(String(args["pet_id"] ?? "")))'));
+      assert.ok(
+        tsCode.includes(
+          'requestPath.replaceAll("{pet_id}", encodeURIComponent(String(args["pet_id"] ?? "")))',
+        ),
+      );
     });
 
     test("evaluates URL resolution accurately for multiple base URL variations", () => {
@@ -103,9 +111,19 @@ describe("Phase 3: Uniform Base URL Path Resolution & Path Parameter Encoding Su
 
       assert.ok(pyCode.includes('clean_base = BASE_URL.rstrip("/")'));
       assert.ok(pyCode.includes('clean_path = endpoint_path.lstrip("/")'));
-      assert.ok(pyCode.includes('full_url = f"{clean_base}/{clean_path}" if clean_path else clean_base'));
-      assert.ok(pyCode.includes('endpoint_path = endpoint_path.replace("{category}", urllib.parse.quote(str(category) if category is not None else "", safe=""))'));
-      assert.ok(pyCode.includes('endpoint_path = endpoint_path.replace("{item_id}", urllib.parse.quote(str(item_id) if item_id is not None else "", safe=""))'));
+      assert.ok(
+        pyCode.includes('full_url = f"{clean_base}/{clean_path}" if clean_path else clean_base'),
+      );
+      assert.ok(
+        pyCode.includes(
+          'endpoint_path = endpoint_path.replace("{category}", urllib.parse.quote(str(category) if category is not None else "", safe=""))',
+        ),
+      );
+      assert.ok(
+        pyCode.includes(
+          'endpoint_path = endpoint_path.replace("{item_id}", urllib.parse.quote(str(item_id) if item_id is not None else "", safe=""))',
+        ),
+      );
     });
 
     test("compiles generated Python tool with uniform URL handling cleanly via AST", () => {
@@ -176,7 +194,10 @@ ${pyCode}
           limit: 25,
         };
 
-        requestPath = requestPath.replaceAll("{tag_name}", encodeURIComponent(String(args.tag_name ?? "")));
+        requestPath = requestPath.replaceAll(
+          "{tag_name}",
+          encodeURIComponent(String(args.tag_name ?? "")),
+        );
 
         const cleanBasePath = BASE_URL.replace(/\/+$/, "");
         const cleanRequestPath = requestPath.replace(/^\/+/, "");
