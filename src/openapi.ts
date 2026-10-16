@@ -56,6 +56,25 @@ export class OpenApiToMcpConverter {
       resolvedBaseUrl = (spec.servers[0] as { url?: string })?.url || "";
     }
 
+    // Extract security scheme (Bearer, API Key, etc.)
+    let authHeader: { name: string; prefix?: string } | undefined;
+    const securitySchemes = (spec.components as Record<string, unknown>)?.securitySchemes as Record<string, unknown> | undefined;
+    if (securitySchemes && typeof securitySchemes === "object") {
+      for (const scheme of Object.values(securitySchemes)) {
+        if (scheme && typeof scheme === "object") {
+          const s = scheme as Record<string, unknown>;
+          if (s.type === "apiKey" && (s.in as string)?.toLowerCase() === "header" && typeof s.name === "string") {
+            authHeader = { name: s.name, prefix: "" };
+            break;
+          }
+          if (s.type === "http" && (s.scheme as string)?.toLowerCase() === "bearer") {
+            authHeader = { name: "Authorization", prefix: "Bearer " };
+            break;
+          }
+        }
+      }
+    }
+
     for (const [pathStr, pathItem] of Object.entries(paths)) {
       if (!pathItem || typeof pathItem !== "object") continue;
 
@@ -85,41 +104,39 @@ export class OpenApiToMcpConverter {
 
         // Inherit path-item level parameters and merge with operation-level parameters
         const pathLevelParams = Array.isArray((pathItem as Record<string, unknown>).parameters)
-          ? ((pathItem as Record<string, unknown>).parameters as Array<{
-              name: string;
-              in?: string;
-              description?: string;
-              required?: boolean;
-              schema?: { type?: string; default?: unknown };
-            }>)
+          ? ((pathItem as Record<string, unknown>).parameters as Array<Record<string, unknown>>)
           : [];
-        const opLevelParams = Array.isArray(endpoint.parameters) ? endpoint.parameters : [];
+        const opLevelParams = Array.isArray(endpoint.parameters)
+          ? (endpoint.parameters as Array<Record<string, unknown>>)
+          : [];
 
-        const combinedParamsMap = new Map<string, (typeof pathLevelParams)[0]>();
-        for (const p of pathLevelParams) {
-          if (p?.name) {
-            combinedParamsMap.set(`${(p.in || "query").toLowerCase()}:${p.name}`, p);
-          }
-        }
-        for (const p of opLevelParams) {
-          if (p?.name) {
-            combinedParamsMap.set(`${(p.in || "query").toLowerCase()}:${p.name}`, p);
+        const combinedParamsMap = new Map<string, Record<string, unknown>>();
+        for (const rawP of [...pathLevelParams, ...opLevelParams]) {
+          if (!rawP || typeof rawP !== "object") continue;
+          const p = rawP.$ref
+            ? (OpenApiToMcpConverter.resolveSchema(rawP, spec) as Record<string, unknown>)
+            : rawP;
+          const pName = p?.name as string;
+          const pIn = ((p?.in as string) || "query").toLowerCase();
+          if (pName) {
+            combinedParamsMap.set(`${pIn}:${pName}`, p);
           }
         }
         const combinedParameters = Array.from(combinedParamsMap.values());
 
         // Parse query / path / header parameters
         for (const p of combinedParameters) {
-          const loc = (p.in || "query").toLowerCase();
-          let argName = p.name;
+          const loc = ((p.in as string) || "query").toLowerCase();
+          const pName = (p.name as string) || "param";
+          let argName = pName;
           if (seenParamNames.has(argName)) {
-            argName = `${p.name}_${loc}`;
+            argName = `${pName}_${loc}`;
             let counter = 2;
             while (seenParamNames.has(argName)) {
-              argName = `${p.name}_${loc}_${counter}`;
+              argName = `${pName}_${loc}_${counter}`;
               counter++;
             }
-            wireParamMap[argName] = p.name;
+            wireParamMap[argName] = pName;
           }
           seenParamNames.set(argName, loc);
 
@@ -127,12 +144,16 @@ export class OpenApiToMcpConverter {
           else if (loc === "query") queryParams.push(argName);
           else if (loc === "header") headerParams.push(argName);
 
+          const rawSchema = (p.schema as Record<string, unknown>) || {};
+          const resolvedParamSchema = OpenApiToMcpConverter.resolveSchema(rawSchema, spec);
+          const pType = (resolvedParamSchema?.type as string) || (rawSchema.type as string);
+
           parameters.push({
             name: argName,
-            type: OpenApiToMcpConverter.normalizeType(p.schema?.type),
-            description: p.description || `${p.in || "query"} parameter`,
+            type: OpenApiToMcpConverter.normalizeType(pType),
+            description: (p.description as string) || `${loc} parameter`,
             required: loc === "path" ? true : Boolean(p.required),
-            default: p.schema?.default,
+            default: resolvedParamSchema?.default ?? rawSchema.default,
           });
         }
 
@@ -181,6 +202,7 @@ export class OpenApiToMcpConverter {
             headerParams,
             hasBody,
             baseUrlVar: "BASE_URL",
+            ...(authHeader ? { authHeader } : {}),
             ...(Object.keys(wireParamMap).length > 0 ? { wireParamMap } : {}),
           },
         });
@@ -189,14 +211,26 @@ export class OpenApiToMcpConverter {
 
     let generatedCode = "";
     if (language === "typescript") {
-      const header = resolvedBaseUrl
-        ? `// Base API Endpoint: ${resolvedBaseUrl}\nconst BASE_URL = process.env.API_BASE_URL || ${JSON.stringify(resolvedBaseUrl)};\n\n`
-        : "";
+      const header = [
+        'import { z } from "zod";',
+        "",
+        `// Base API Endpoint: ${resolvedBaseUrl || "Configurable via API_BASE_URL"}`,
+        `const BASE_URL = process.env.API_BASE_URL || ${JSON.stringify(resolvedBaseUrl || "")};`,
+        "",
+      ].join("\n");
       generatedCode = header + tools.map((t) => McpCodeGenerator.generateTypeScriptTool(t)).join("\n\n");
     } else {
-      const header = resolvedBaseUrl
-        ? `# Base API Endpoint: ${resolvedBaseUrl}\nBASE_URL = os.environ.get("API_BASE_URL", ${JSON.stringify(resolvedBaseUrl)})\n\n`
-        : "";
+      const header = [
+        "import json",
+        "import os",
+        "import urllib.error",
+        "import urllib.parse",
+        "import urllib.request",
+        "",
+        `# Base API Endpoint: ${resolvedBaseUrl || "Configurable via API_BASE_URL"}`,
+        `BASE_URL = os.environ.get("API_BASE_URL", ${JSON.stringify(resolvedBaseUrl || "")})`,
+        "",
+      ].join("\n");
       generatedCode = header + tools.map((t) => McpCodeGenerator.generatePythonTool(t)).join("\n\n");
     }
 

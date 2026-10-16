@@ -46,6 +46,10 @@ export interface ApiEndpointMetadata {
   hasBody?: boolean;
   baseUrlVar?: string;
   wireParamMap?: Record<string, string>;
+  authHeader?: {
+    name: string;
+    prefix?: string;
+  };
 }
 
 export interface ToolDefinition {

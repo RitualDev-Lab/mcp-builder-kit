@@ -163,6 +163,16 @@ ${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
     const requestBody = JSON.stringify(bodyPayload);`;
       }
 
+      const authHeaderName = ep.authHeader?.name || "Authorization";
+      const authHeaderPrefix = ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
+      const authValExpression = authHeaderPrefix
+        ? `\`${authHeaderPrefix}\${process.env.API_KEY}\``
+        : "process.env.API_KEY";
+      const authAssignment =
+        authHeaderName === "Authorization"
+          ? `{ Authorization: ${authValExpression} }`
+          : `{ [${JSON.stringify(authHeaderName)}]: ${authValExpression} }`;
+
       handlerBody = `  try {
     // 1. Substitute path parameters
     let requestPath = "${ep.path}";
@@ -176,7 +186,7 @@ ${queryAppenders ? `${queryAppenders}\n` : ""}
     // 3. Prepare headers
     const headers: Record<string, string> = {
       Accept: "application/json",
-      ...(process.env.API_KEY ? { Authorization: \`Bearer \${process.env.API_KEY}\` } : {}),
+      ...(process.env.API_KEY ? ${authAssignment} : {}),
     };
 ${headerAppenders ? `${headerAppenders}\n` : ""}
     // 4. Prepare request payload
@@ -314,7 +324,7 @@ ${handlerBody}
         })
         .join(", ");
       const queryLogic = queryEntries
-        ? `    query_params = {k: v for k, v in {${queryEntries}}.items() if v is not None}\n    if query_params:\n        full_url += "?" + urllib.parse.urlencode(query_params)`
+        ? `    query_params = {k: v for k, v in {${queryEntries}}.items() if v is not None}\n    if query_params:\n        full_url += "?" + urllib.parse.urlencode(query_params, doseq=True)`
         : "";
 
       const headerEntries = (ep.headerParams || [])
@@ -339,6 +349,12 @@ ${handlerBody}
         bodyLogic = `    headers["Content-Type"] = "application/json"\n    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}\n    req_body = json.dumps(body_dict).encode("utf-8") if body_dict else None`;
       }
 
+      const authHeaderName = ep.authHeader?.name || "Authorization";
+      const authHeaderPrefix = ep.authHeader?.prefix !== undefined ? ep.authHeader.prefix : "Bearer ";
+      const authPyVal = authHeaderPrefix
+        ? `f"${authHeaderPrefix}{api_key}"`
+        : "str(api_key)";
+
       pyBody = `    import json
     import os
     import urllib.request
@@ -357,7 +373,7 @@ ${queryLogic ? `${queryLogic}\n` : ""}
     headers = {"Accept": "application/json"}
     api_key = os.environ.get("API_KEY")
     if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+        headers[${JSON.stringify(authHeaderName)}] = ${authPyVal}
 ${headerEntries ? `${headerEntries}\n` : ""}
     # 4. Prepare body payload
 ${bodyLogic}
@@ -433,7 +449,7 @@ export async function read${toPascalCase(resource.name)}Resource(): Promise<{
       case "array":
         return "z.array(z.any())";
       case "object":
-        return "z.record(z.any())";
+        return "z.record(z.string(), z.any())";
       default:
         return "z.string()";
     }
