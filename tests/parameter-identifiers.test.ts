@@ -128,7 +128,7 @@ describe("Phase 1: Safe Parameter Identifier Mapping & Syntax Quoting (M1)", () 
       assert.ok(tsCode.includes('args["class"]'));
 
       // Path parameter replacement with wire name
-      assert.ok(tsCode.includes('.replace("{item-id}", encodeURIComponent(String(args["item-id"] ?? "")))'));
+      assert.ok(tsCode.includes('.replaceAll("{item-id}", encodeURIComponent(String(args["item-id"] ?? "")))'));
 
       // Payload exclusions use bracket access
       assert.ok(tsCode.includes('delete (bodyPayload as any)["item-id"]'));

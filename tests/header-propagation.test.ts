@@ -139,7 +139,7 @@ ${pyCode}
       assert.strictEqual(tool.apiEndpoint.wireParamMap.id_body, "id");
 
       // Verify TypeScript generated code binds each parameter to its wire location
-      assert.ok(result.generatedCode.includes('.replace("{id}", encodeURIComponent(String(args["id"] ?? "")))'));
+      assert.ok(result.generatedCode.includes('.replaceAll("{id}", encodeURIComponent(String(args["id"] ?? "")))'));
       assert.ok(result.generatedCode.includes('url.searchParams.set("id", String(args["id_query"]))'));
       assert.ok(result.generatedCode.includes('headers["id"] = String(args["id_header"])'));
       assert.ok(result.generatedCode.includes('(bodyPayload as any)["id"] = (bodyPayload as any)["id_body"]'));

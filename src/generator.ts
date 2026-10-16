@@ -127,7 +127,7 @@ export class McpCodeGenerator {
       const pathSubstitutions = (ep.pathParams || [])
         .map((p) => {
           const wireName = ep.wireParamMap?.[p] || p;
-          return `    requestPath = requestPath.replace("{${wireName}}", encodeURIComponent(String(args[${JSON.stringify(p)}] ?? "")));`;
+          return `    requestPath = requestPath.replaceAll("{${wireName}}", encodeURIComponent(String(args[${JSON.stringify(p)}] ?? "")));`;
         })
         .join("\n");
 
@@ -168,7 +168,10 @@ ${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
     let requestPath = "${ep.path}";
 ${pathSubstitutions ? `${pathSubstitutions}\n` : ""}
     // 2. Build URL & Query parameters
-    const url = new URL(requestPath, BASE_URL);
+    const cleanBasePath = BASE_URL.replace(/\\/+$/, "");
+    const cleanRequestPath = requestPath.replace(/^\\/+/, "");
+    const fullUrl = cleanRequestPath ? \`\${cleanBasePath}/\${cleanRequestPath}\` : cleanBasePath;
+    const url = new URL(fullUrl);
 ${queryAppenders ? `${queryAppenders}\n` : ""}
     // 3. Prepare headers
     const headers: Record<string, string> = {
@@ -299,7 +302,7 @@ ${handlerBody}
         .map((p) => {
           const wireName = ep.wireParamMap?.[p] || p;
           const safeVar = paramMap.get(p) || p;
-          return `    endpoint_path = endpoint_path.replace("{${wireName}}", urllib.parse.quote(str(${safeVar}) if ${safeVar} is not None else ""))`;
+          return `    endpoint_path = endpoint_path.replace("{${wireName}}", urllib.parse.quote(str(${safeVar}) if ${safeVar} is not None else "", safe=""))`;
         })
         .join("\n");
 
@@ -346,8 +349,9 @@ ${handlerBody}
     endpoint_path = "${ep.path}"
 ${pathSubs ? `${pathSubs}\n` : ""}
     # 2. Build full URL with query parameters
-    base_url = BASE_URL.rstrip("/")
-    full_url = f"{base_url}{endpoint_path}"
+    clean_base = BASE_URL.rstrip("/")
+    clean_path = endpoint_path.lstrip("/")
+    full_url = f"{clean_base}/{clean_path}" if clean_path else clean_base
 ${queryLogic ? `${queryLogic}\n` : ""}
     # 3. Prepare headers
     headers = {"Accept": "application/json"}

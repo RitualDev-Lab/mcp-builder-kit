@@ -126,7 +126,7 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
     assert.ok(conversion.generatedCode.includes("listPetsToolDefinition"));
     assert.ok(conversion.generatedCode.includes("createPetToolDefinition"));
     assert.ok(conversion.generatedCode.includes("fetch(url.toString()"));
-    assert.ok(conversion.generatedCode.includes("new URL(requestPath, BASE_URL)"));
+    assert.ok(conversion.generatedCode.includes("new URL(fullUrl)"));
     assert.ok(conversion.generatedCode.includes("response.ok"));
   });
 
