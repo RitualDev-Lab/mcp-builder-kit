@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { McpCodeGenerator } from "./generator.js";
@@ -13,27 +14,46 @@ import type {
   ToolParameter,
 } from "./types.js";
 
+function getPackageVersion(): string {
+  try {
+    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "../package.json");
+    if (existsSync(pkgPath)) {
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {
+    // fallback
+  }
+  return "1.2.3";
+}
+
 function printHelp(): void {
   console.log(`
 🚀 mcp-builder-kit - Production Model Context Protocol (MCP) Scaffolding CLI
 
 Usage:
+  npx @ritualdev-lab/mcp-builder-kit <command> [options]
   mcp-builder init [project-name] [options]
-  mcp-builder add-tool <tool-name> [options]
-  mcp-builder from-openapi <openapi-spec-path> [options]
-  mcp-builder inspect "<server-command>" [--ci]
-  mcp-builder deploy [--target cloudflare-workers|cloud-run]
-  mcp-builder ui [--port 4100]
-  mcp-builder audit [target-dir]
-  mcp-builder package [target-dir] [options]
-  mcp-builder packs [list|install] [pack-id] [options]
-  mcp-builder badge <server-name> [options]
-  mcp-builder spotlight [server-name] [options]
-  mcp-builder turnkey [starter|pro|enterprise] [options]
-  mcp-builder grants [grant-id]
-  mcp-builder bounties
-  mcp-builder --help
-  mcp-builder --version
+  mcp-kit init [project-name] [options]
+  mcp-builder-kit init [project-name] [options]
+
+Commands:
+  init [project-name] [options]
+  add-tool <tool-name> [options]
+  from-openapi <openapi-spec-path> [options]
+  inspect "<server-command>" [--ci]
+  deploy [--target cloudflare-workers|cloud-run]
+  ui [--port 4100]
+  audit [target-dir]
+  package [target-dir] [options]
+  packs [list|install] [pack-id] [options]
+  badge <server-name> [options]
+  spotlight <server-name> [options]
+  turnkey [starter|pro|enterprise] [options]
+  grants [grant-id]
+  bounties
+  --help
+  --version
 
 Commands:
   init [name]              Scaffolds a new MCP server project (interactive wizard if omitted)
@@ -57,6 +77,7 @@ Options for 'init':
   --dir, -d                Target output directory (defaults to ./<project-name>)
   --desc                   Short project description
   --author                 Project author name / organization
+  --force, -f              Overwrite existing files in target directory without aborting
   --interactive, -i        Launch interactive step-by-step TUI wizard
 
 Options for 'inspect':
@@ -91,7 +112,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
   }
 
   if (args.includes("--version") || args.includes("-v")) {
-    console.log("mcp-builder-kit v0.1.2");
+    console.log(`mcp-builder-kit v${getPackageVersion()}`);
     return;
   }
 
@@ -182,34 +203,41 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log(`\n📦 Scaffolding new MCP server: ${projectName}`);
     console.log(`   • Language:  ${language}`);
     console.log(`   • Transport: ${transport}`);
-    console.log(`   • Target:    ${targetDir}\n`);
+    const force = args.includes("--force") || args.includes("-f");
 
-    const result = McpProjectScaffolder.scaffold({
-      projectName,
-      targetDir,
-      language,
-      transport,
-      description,
-      author,
-    });
+    try {
+      const result = McpProjectScaffolder.scaffold({
+        projectName,
+        targetDir,
+        language,
+        transport,
+        description,
+        author,
+        force,
+      });
 
-    console.log("✅ Successfully created files:");
-    for (const f of result.filesCreated) {
-      console.log(`   + ${f}`);
+      console.log("✅ Successfully created files:");
+      for (const f of result.filesCreated) {
+        console.log(`   + ${f}`);
+      }
+
+      console.log("\n🎉 Next steps:");
+      console.log(`   cd ${projectName}`);
+      if (language === "typescript") {
+        console.log("   pnpm install  # (or npm install)");
+        console.log("   pnpm run build");
+        console.log("   pnpm test");
+      } else {
+        console.log("   python -m venv .venv");
+        console.log("   pip install -e .");
+        console.log("   pytest");
+      }
+      console.log("\n👉 Connect to Claude Desktop or Antigravity via instructions in README.md\n");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`\n❌ ${errMsg}\n`);
+      process.exit(1);
     }
-
-    console.log("\n🎉 Next steps:");
-    console.log(`   cd ${projectName}`);
-    if (language === "typescript") {
-      console.log("   pnpm install  # (or npm install)");
-      console.log("   pnpm run build");
-      console.log("   pnpm test");
-    } else {
-      console.log("   python -m venv .venv");
-      console.log("   pip install -e .");
-      console.log("   pytest");
-    }
-    console.log("\n👉 Connect to Claude Desktop or Antigravity via instructions in README.md\n");
     return;
   }
 

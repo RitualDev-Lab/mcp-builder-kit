@@ -31,35 +31,41 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
+        INPUT_TARGET_DIR: ${{ inputs.target_dir }}
+        INPUT_SERVER_COMMAND: ${{ inputs.server_command }}
+        INPUT_FAIL_ON_SECURITY_RISK: ${{ inputs.fail_on_security_risk }}
+        INPUT_POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
+        ACTION_PATH: ${{ github.action_path }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         echo "⚡ Running MCP Builder Kit Security & Protocol Audit..."
         
         EXIT_CODE=0
-        if [ -f "${{ github.action_path }}/dist/cli.js" ]; then
-          CLI_EXEC="node ${{ github.action_path }}/dist/cli.js"
-        elif [ -f "${{ github.action_path }}/package.json" ]; then
-          (cd "${{ github.action_path }}" && npm install --silent && npm run build --silent)
-          CLI_EXEC="node ${{ github.action_path }}/dist/cli.js"
+        if [ -f "$ACTION_PATH/dist/cli.js" ]; then
+          CLI_EXEC="node $ACTION_PATH/dist/cli.js"
+        elif [ -f "$ACTION_PATH/package.json" ]; then
+          (cd "$ACTION_PATH" && npm install --silent && npm run build --silent)
+          CLI_EXEC="node $ACTION_PATH/dist/cli.js"
         else
           CLI_EXEC="npx --yes @ritualdev-lab/mcp-builder-kit@latest"
         fi
 
-        $CLI_EXEC audit "${{ inputs.target_dir }}" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+        $CLI_EXEC audit "$INPUT_TARGET_DIR" > .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
 
-        if [ -n "${{ inputs.server_command }}" ]; then
+        if [ -n "$INPUT_SERVER_COMMAND" ]; then
           echo -e "\n🔍 Running Live Protocol Conformance Gate (inspect --ci)..." >> .mcp-audit-report.txt
-          $CLI_EXEC inspect "${{ inputs.server_command }}" --ci >> .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
+          $CLI_EXEC inspect "$INPUT_SERVER_COMMAND" --ci >> .mcp-audit-report.txt 2>&1 || EXIT_CODE=$?
         fi
 
-        echo "### ⚡ MCP Builder Kit Security & Conformance Gate" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`text" >> $GITHUB_STEP_SUMMARY
-        cat .mcp-audit-report.txt >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "### ⚡ MCP Builder Kit Security & Conformance Gate" >> "$GITHUB_STEP_SUMMARY"
+        echo "\`\`\`text" >> "$GITHUB_STEP_SUMMARY"
+        cat .mcp-audit-report.txt >> "$GITHUB_STEP_SUMMARY"
+        echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
-        if [ "${{ inputs.post_pr_comment }}" = "true" ] && [ -n "${{ inputs.github_token }}" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          if [ -n "$PR_NUMBER" ]; then
-            COMMENT_BODY=$(cat <<EOF
+        if [ "$INPUT_POST_PR_COMMENT" = "true" ] && [ -n "$GITHUB_TOKEN" ] && [ "$GH_EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
+          COMMENT_BODY=$(cat <<EOF
 ### ⚡ MCP Server Protocol & Security Audit Report
 \`\`\`text
 $(cat .mcp-audit-report.txt)
@@ -67,30 +73,32 @@ $(cat .mcp-audit-report.txt)
 > 🛠️ *Audited by [MCP Builder Kit](https://mcp.ritualdev.in) production toolchain.*
 EOF
 )
-            node -e "
-              const https = require('https');
-              const data = JSON.stringify({ body: process.env.COMMENT_BODY });
-              const req = https.request({
-                hostname: 'api.github.com',
-                path: '/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments',
-                method: 'POST',
-                headers: {
-                  'Authorization': `token ${process.env.GITHUB_TOKEN}`,
-                  'User-Agent': 'MCP-Builder-Kit-Action',
-                  'Content-Type': 'application/json',
-                  'Content-Length': Buffer.byteLength(data)
-                }
-              }, res => {
-                if (res.statusCode >= 400) console.warn('Could not post PR comment:', res.statusCode);
-              });
-              req.on('error', err => console.warn('Error posting comment:', err.message));
-              req.write(data);
-              req.end();
-            " env: COMMENT_BODY="$COMMENT_BODY"
-          fi
+          export COMMENT_BODY
+          node -e '
+            const https = require("https");
+            const data = JSON.stringify({ body: process.env.COMMENT_BODY });
+            const repo = process.env.GH_REPOSITORY;
+            const prNum = process.env.PR_NUMBER;
+            const req = https.request({
+              hostname: "api.github.com",
+              path: `/repos/${repo}/issues/${prNum}/comments`,
+              method: "POST",
+              headers: {
+                "Authorization": `token ${process.env.GITHUB_TOKEN}`,
+                "User-Agent": "MCP-Builder-Kit-Action",
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(data)
+              }
+            }, res => {
+              if (res.statusCode >= 400) console.warn("Could not post PR comment:", res.statusCode);
+            });
+            req.on("error", err => console.warn("Error posting comment:", err.message));
+            req.write(data);
+            req.end();
+          '
         fi
 
-        if [ "${{ inputs.fail_on_security_risk }}" = "true" ] && [ $EXIT_CODE -ne 0 ]; then
+        if [ "$INPUT_FAIL_ON_SECURITY_RISK" = "true" ] && [ $EXIT_CODE -ne 0 ]; then
           echo "❌ [MCP Builder Kit] High-risk security vulnerabilities or protocol violations detected."
           exit $EXIT_CODE
         fi

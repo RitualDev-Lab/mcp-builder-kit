@@ -53,4 +53,36 @@ describe("Phase 1: MCP Server Scaffolder & Starter Blueprints Suite", () => {
     assert.ok(existsSync(join(targetDir, "pyproject.toml")));
     assert.ok(existsSync(join(targetDir, "sample_py_mcp/server.py")));
   });
+
+  test("refuses to overwrite existing files without force flag", () => {
+    const targetDir = join(testOutputDir, "sample-ts-mcp");
+    // Already scaffolded from earlier test
+
+    assert.throws(
+      () => {
+        McpProjectScaffolder.scaffold({
+          projectName: "sample-ts-mcp",
+          targetDir,
+          language: "typescript",
+          transport: "stdio",
+        });
+      },
+      /Scaffolding aborted: target directory .* already contains existing files/,
+    );
+  });
+
+  test("successfully overwrites when force flag is set to true", () => {
+    const targetDir = join(testOutputDir, "sample-ts-mcp");
+
+    const result = McpProjectScaffolder.scaffold({
+      projectName: "sample-ts-mcp",
+      targetDir,
+      language: "typescript",
+      transport: "stdio",
+      force: true,
+    });
+
+    assert.strictEqual(result.success, true);
+    assert.ok(result.filesCreated.length > 0);
+  });
 });

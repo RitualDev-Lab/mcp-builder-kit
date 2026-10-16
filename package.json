@@ -4,6 +4,7 @@
   "description": "Production Toolkit & Scaffolding Engine for Model Context Protocol (MCP) Servers",
   "type": "module",
   "bin": {
+    "mcp-builder-kit": "./dist/cli.js",
     "mcp-builder": "./dist/cli.js",
     "mcp-kit": "./dist/cli.js"
   },

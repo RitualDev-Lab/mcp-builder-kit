@@ -10,6 +10,7 @@ export interface McpScaffoldOptions {
   author?: string;
   includeAgentShield?: boolean;
   tools?: string[];
+  force?: boolean;
 }
 
 export interface GeneratedFile {
@@ -36,10 +37,21 @@ export interface ToolParameter {
   default?: unknown;
 }
 
+export interface ApiEndpointMetadata {
+  path: string;
+  method: string;
+  pathParams?: string[];
+  queryParams?: string[];
+  headerParams?: string[];
+  hasBody?: boolean;
+  baseUrlVar?: string;
+}
+
 export interface ToolDefinition {
   name: string;
   description: string;
   parameters: ToolParameter[];
+  apiEndpoint?: ApiEndpointMetadata;
 }
 
 export interface ResourceDefinition {

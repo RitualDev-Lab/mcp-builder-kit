@@ -77,23 +77,33 @@ export class OpenApiToMcpConverter {
           `${httpMethod.toUpperCase()} request to ${pathStr}`;
 
         const parameters: ToolParameter[] = [];
+        const pathParams: string[] = [];
+        const queryParams: string[] = [];
+        const headerParams: string[] = [];
 
         // Parse query / path parameters
         if (Array.isArray(endpoint.parameters)) {
           for (const p of endpoint.parameters) {
+            const loc = (p.in || "query").toLowerCase();
+            if (loc === "path") pathParams.push(p.name);
+            else if (loc === "query") queryParams.push(p.name);
+            else if (loc === "header") headerParams.push(p.name);
+
             parameters.push({
               name: p.name,
               type: OpenApiToMcpConverter.normalizeType(p.schema?.type),
               description: p.description || `${p.in || "query"} parameter`,
-              required: Boolean(p.required),
+              required: loc === "path" ? true : Boolean(p.required),
               default: p.schema?.default,
             });
           }
         }
 
         // Parse requestBody JSON properties with recursive $ref resolution
+        let hasBody = false;
         const jsonContent = endpoint.requestBody?.content?.["application/json"];
         if (jsonContent?.schema) {
+          hasBody = true;
           const resolvedSchema = OpenApiToMcpConverter.resolveSchema(jsonContent.schema, spec);
           if (resolvedSchema?.properties) {
             const reqList = Array.isArray(resolvedSchema.required) ? resolvedSchema.required : [];
@@ -114,6 +124,15 @@ export class OpenApiToMcpConverter {
           name: toolName,
           description,
           parameters,
+          apiEndpoint: {
+            path: pathStr,
+            method: httpMethod.toUpperCase(),
+            pathParams,
+            queryParams,
+            headerParams,
+            hasBody,
+            baseUrlVar: "BASE_URL",
+          },
         });
       }
     }

@@ -125,5 +125,37 @@ describe("Phase 2: Intelligent Tool, Resource & OpenAPI Generators Suite", () =>
     assert.strictEqual(createPet.parameters.length, 3);
     assert.ok(conversion.generatedCode.includes("listPetsToolDefinition"));
     assert.ok(conversion.generatedCode.includes("createPetToolDefinition"));
+    assert.ok(conversion.generatedCode.includes("fetch(url.toString()"));
+    assert.ok(conversion.generatedCode.includes("new URL(requestPath, BASE_URL)"));
+    assert.ok(conversion.generatedCode.includes("response.ok"));
+  });
+
+  test("converts OpenAPI specification into executable Python tools", () => {
+    const sampleOpenApi = {
+      openapi: "3.0.0",
+      info: { title: "Pet Store API", version: "1.0.0" },
+      paths: {
+        "/pets/{petId}": {
+          get: {
+            operationId: "get_pet_by_id",
+            summary: "Get pet by ID",
+            parameters: [
+              { name: "petId", in: "path", schema: { type: "string" }, required: true },
+            ],
+          },
+        },
+      },
+    };
+
+    const conversion = OpenApiToMcpConverter.convert({
+      spec: sampleOpenApi,
+      language: "python",
+      baseUrl: "https://api.petstore.example.com/v1",
+    });
+
+    assert.strictEqual(conversion.tools.length, 1);
+    assert.ok(conversion.generatedCode.includes("urllib.request.urlopen"));
+    assert.ok(conversion.generatedCode.includes('endpoint_path.replace("{petId}"'));
+    assert.ok(conversion.generatedCode.includes("https://api.petstore.example.com/v1"));
   });
 });

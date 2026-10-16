@@ -13,6 +13,7 @@ export class McpProjectScaffolder {
     const language = options.language || "typescript";
     const transport = options.transport || "stdio";
     const targetDir = resolve(options.targetDir);
+    const force = Boolean(options.force);
 
     let files: GeneratedFile[] = [];
     if (language === "typescript") {
@@ -21,6 +22,23 @@ export class McpProjectScaffolder {
       files = generatePythonTemplate(options);
     } else {
       throw new Error(`Unsupported language: ${language}. Supported languages: typescript, python`);
+    }
+
+    // Safety check: Prevent accidental destructive overwrite unless explicitly forced
+    if (!force) {
+      const conflictingFiles: string[] = [];
+      for (const file of files) {
+        const fullPath = join(targetDir, file.path);
+        if (existsSync(fullPath)) {
+          conflictingFiles.push(file.path);
+        }
+      }
+
+      if (conflictingFiles.length > 0) {
+        throw new Error(
+          `Scaffolding aborted: target directory '${targetDir}' already contains existing files:\n${conflictingFiles.map((f) => `  - ${f}`).join("\n")}\nPass --force to overwrite existing files.`,
+        );
+      }
     }
 
     const filesCreated: string[] = [];
