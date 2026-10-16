@@ -44,6 +44,7 @@ Commands:
   inspect "<server-command>" [--ci]
   deploy [--target cloudflare-workers|cloud-run]
   ui [--port 4100]
+  benchmark [--iterations 25]
   audit [target-dir]
   package [target-dir] [options]
   packs [list|install] [pack-id] [options]
@@ -846,6 +847,39 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
     // Keep process alive unless terminated
     await new Promise(() => {});
+    return;
+  }
+
+  // 14. mcp-builder benchmark
+  if (command === "benchmark") {
+    let iterations = 25;
+    for (let i = 1; i < args.length; i++) {
+      if ((args[i] === "--iterations" || args[i] === "-i") && args[i + 1]) {
+        const iter = Number.parseInt(args[i + 1], 10);
+        if (!Number.isNaN(iter) && iter > 0) iterations = iter;
+        i++;
+      }
+    }
+
+    console.log(`\n⚡ [mcp-builder-kit] Running OpenAPI conversion & scaffolding benchmark (${iterations} iterations)...`);
+    const { McpBenchmarkEngine } = await import("./benchmark.js");
+    const metrics = McpBenchmarkEngine.runBenchmark(iterations);
+
+    console.log("┌──────────────────────────────────────────────────────────────┐");
+    console.log("│ 📊 Performance Benchmark Metrics:                            │");
+    console.log(`│   Total Endpoints Converted:   ${String(metrics.openApiEndpointsConverted).padEnd(29)} │`);
+    console.log(`│   Total Benchmark Time:        ${`${metrics.totalTimeMs}ms`.padEnd(29)} │`);
+    console.log(`│   Avg Conversion Latency:      ${`${metrics.avgConversionMs.toFixed(2)}ms`.padEnd(29)} │`);
+    console.log(`│   Avg Tool Gen Latency:        ${`${metrics.avgToolGenMs.toFixed(3)}ms`.padEnd(29)} │`);
+    console.log(`│   Conversion Throughput:       ${`${metrics.throughputEndpointsPerSec} endpoints/s`.padEnd(29)} │`);
+    console.log("└──────────────────────────────────────────────────────────────┘");
+
+    if (metrics.passed) {
+      console.log("🎉 Benchmark passed within performance SLO targets (<50ms conversion).\n");
+      return;
+    }
+
+    console.warn("⚠️ Warning: Benchmark exceeded execution budget target.\n");
     return;
   }
 

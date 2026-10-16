@@ -14,3 +14,4 @@ export * from "./deployer.js";
 export * from "./dashboard.js";
 export * from "./templates/typescript.js";
 export * from "./templates/python.js";
+export * from "./benchmark.js";
