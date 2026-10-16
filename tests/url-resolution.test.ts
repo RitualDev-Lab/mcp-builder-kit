@@ -5,7 +5,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
-import { getPythonCommand } from "./test-utils.js";
+import { getPythonCommand } from "./helpers/python.js";
 
 describe("Phase 3: Uniform Base URL Path Resolution & Path Parameter Encoding Suite (M3)", () => {
   describe("TypeScript Base Path Preservation (No /v1 Dropping)", () => {

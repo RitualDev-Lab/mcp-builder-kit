@@ -5,7 +5,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
-import { getPythonCommand } from "./test-utils.js";
+import { getPythonCommand } from "./helpers/python.js";
 
 describe("Phase 2: Header Parameter Propagation & Request Body Isolation Suite (M2)", () => {
   const sampleHeaderTool: ToolDefinition = {

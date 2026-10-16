@@ -4,7 +4,7 @@ import test, { describe } from "node:test";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
-import { getPythonCommand } from "./test-utils.js";
+import { getPythonCommand } from "./helpers/python.js";
 
 describe("Phase 4: Python Argument Ordering & Schema Hardening Suite (M4)", () => {
   describe("Python Argument Ordering Guarantee (M4)", () => {

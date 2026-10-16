@@ -9,7 +9,7 @@ import {
 } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
 import type { ToolDefinition } from "../src/types.js";
-import { getPythonCommand } from "./test-utils.js";
+import { getPythonCommand } from "./helpers/python.js";
 
 describe("Phase 1: Safe Parameter Identifier Mapping & Syntax Quoting (M1)", () => {
   describe("TypeScript formatPropertyKey", () => {
