@@ -1,10 +1,93 @@
 import type { ResourceDefinition, ToolDefinition, ToolParameter } from "./types.js";
 
+export const PYTHON_RESERVED_KEYWORDS = new Set([
+  // Python syntax keywords
+  "False", "None", "True", "and", "as", "assert", "async", "await",
+  "break", "class", "continue", "def", "del", "elif", "else", "except",
+  "finally", "for", "from", "global", "if", "import", "in", "is",
+  "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try",
+  "while", "with", "yield", "match", "case",
+  // Common built-ins that should not be shadowed
+  "type", "id", "format", "input", "list", "dict", "set", "int", "float", "str", "bool",
+]);
+
+export const JS_RESERVED_KEYWORDS = new Set([
+  "break", "case", "catch", "class", "const", "continue", "debugger", "default",
+  "delete", "do", "else", "export", "extends", "finally", "for", "function",
+  "if", "import", "in", "instanceof", "new", "return", "super", "switch",
+  "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
+]);
+
+/**
+ * Normalizes any string into a safe, valid Python identifier.
+ */
+export function toSafePythonIdentifier(name: string): string {
+  let normalized = name
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .replace(/[^a-zA-Z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+
+  if (!normalized) {
+    normalized = "param";
+  }
+
+  if (/^[0-9]/.test(normalized)) {
+    normalized = `arg_${normalized}`;
+  }
+
+  if (PYTHON_RESERVED_KEYWORDS.has(normalized)) {
+    normalized = `${normalized}_`;
+  }
+
+  return normalized;
+}
+
+/**
+ * Builds a collision-free mapping between external API parameter names and safe internal Python identifiers.
+ */
+export function buildPythonParameterMap(parameters: ToolParameter[]): Map<string, string> {
+  const mapping = new Map<string, string>();
+  const used = new Set<string>();
+
+  for (const p of parameters) {
+    let safeName = toSafePythonIdentifier(p.name);
+    if (used.has(safeName)) {
+      let counter = 2;
+      const base = safeName.endsWith("_") ? safeName.slice(0, -1) : safeName;
+      let candidate = `${base}_${counter}`;
+      while (used.has(candidate)) {
+        counter++;
+        candidate = `${base}_${counter}`;
+      }
+      safeName = candidate;
+    }
+    used.add(safeName);
+    mapping.set(p.name, safeName);
+  }
+
+  return mapping;
+}
+
+/**
+ * Formats a TypeScript/JavaScript object property key, adding quotes if not a valid identifier.
+ */
+export function formatPropertyKey(name: string): string {
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name) && !JS_RESERVED_KEYWORDS.has(name)) {
+    return name;
+  }
+  return JSON.stringify(name);
+}
+
 /**
  * Generates strongly typed MCP tool code and JSON Schemas for TypeScript and Python
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: Code generator utility class
 export class McpCodeGenerator {
+  public static toSafePythonIdentifier = toSafePythonIdentifier;
+  public static buildPythonParameterMap = buildPythonParameterMap;
+  public static formatPropertyKey = formatPropertyKey;
+
   /**
    * Generates a TypeScript tool handler snippet using Zod and Mcp Server SDK
    */
@@ -18,13 +101,15 @@ export class McpCodeGenerator {
         if (!p.required) {
           field += ".optional()";
         }
-        return `    ${p.name}: ${field},`;
+        const key = formatPropertyKey(p.name);
+        return `    ${key}: ${field},`;
       })
       .join("\n");
 
     const inputProperties = tool.parameters
       .map((p) => {
-        return `        ${p.name}: {
+        const key = formatPropertyKey(p.name);
+        return `        ${key}: {
           type: "${p.type}",
           description: ${JSON.stringify(p.description || "")},
         },`;
@@ -33,24 +118,24 @@ export class McpCodeGenerator {
 
     const requiredFields = tool.parameters
       .filter((p) => p.required)
-      .map((p) => `"${p.name}"`)
+      .map((p) => JSON.stringify(p.name))
       .join(", ");
 
     let handlerBody = "";
     if (tool.apiEndpoint) {
       const ep = tool.apiEndpoint;
       const pathSubstitutions = (ep.pathParams || [])
-        .map((p) => `    requestPath = requestPath.replace("{${p}}", encodeURIComponent(String(args.${p} ?? "")));`)
+        .map((p) => `    requestPath = requestPath.replace("{${p}}", encodeURIComponent(String(args[${JSON.stringify(p)}] ?? "")));`)
         .join("\n");
 
       const queryAppenders = (ep.queryParams || [])
-        .map((q) => `    if (args.${q} !== undefined) { url.searchParams.set("${q}", String(args.${q})); }`)
+        .map((q) => `    if (args[${JSON.stringify(q)}] !== undefined) { url.searchParams.set("${q}", String(args[${JSON.stringify(q)}])); }`)
         .join("\n");
 
       let bodyHandling = "const requestBody = undefined;";
       if (ep.hasBody) {
-        const excludeProps = [...(ep.pathParams || []), ...(ep.queryParams || [])];
-        const deleteStatements = excludeProps.map((p) => `    delete (bodyPayload as any).${p};`).join("\n");
+        const excludeProps = [...(ep.pathParams || []), ...(ep.queryParams || []), ...(ep.headerParams || [])];
+        const deleteStatements = excludeProps.map((p) => `    delete (bodyPayload as any)[${JSON.stringify(p)}];`).join("\n");
         bodyHandling = `headers["Content-Type"] = "application/json";
     const bodyPayload = { ...args };
 ${deleteStatements}
@@ -162,35 +247,54 @@ ${handlerBody}
    * Generates a Python FastMCP tool function
    */
   public static generatePythonTool(tool: ToolDefinition): string {
+    const paramMap = buildPythonParameterMap(tool.parameters);
+
     const fnArgs = tool.parameters
       .map((p) => {
+        const safeName = paramMap.get(p.name) || p.name;
         const pyType = McpCodeGenerator.toPythonType(p);
         const defaultVal = p.required ? "" : " = None";
-        return `${p.name}: ${pyType}${defaultVal}`;
+        return `${safeName}: ${pyType}${defaultVal}`;
       })
       .join(", ");
 
     const docstringArgs = tool.parameters
-      .map((p) => `    ${p.name}: ${p.description || "Parameter"}`)
+      .map((p) => {
+        const safeName = paramMap.get(p.name) || p.name;
+        return `    ${safeName}: ${p.description || "Parameter"}`;
+      })
       .join("\n");
 
     let pyBody = "";
     if (tool.apiEndpoint) {
       const ep = tool.apiEndpoint;
       const pathSubs = (ep.pathParams || [])
-        .map((p) => `    endpoint_path = endpoint_path.replace("{${p}}", urllib.parse.quote(str(${p}) if ${p} is not None else ""))`)
+        .map((p) => {
+          const safeVar = paramMap.get(p) || p;
+          return `    endpoint_path = endpoint_path.replace("{${p}}", urllib.parse.quote(str(${safeVar}) if ${safeVar} is not None else ""))`;
+        })
         .join("\n");
 
-      const queryEntries = (ep.queryParams || []).map((q) => `"${q}": ${q}`).join(", ");
+      const queryEntries = (ep.queryParams || [])
+        .map((q) => {
+          const safeVar = paramMap.get(q) || q;
+          return `"${q}": ${safeVar}`;
+        })
+        .join(", ");
       const queryLogic = queryEntries
         ? `    query_params = {k: v for k, v in {${queryEntries}}.items() if v is not None}\n    if query_params:\n        full_url += "?" + urllib.parse.urlencode(query_params)`
         : "";
 
       let bodyLogic = "    req_body = None";
       if (ep.hasBody) {
-        const nonBody = new Set([...(ep.pathParams || []), ...(ep.queryParams || [])]);
-        const bodyParams = tool.parameters.filter((p) => !nonBody.has(p.name)).map((p) => p.name);
-        const bodyEntries = bodyParams.map((p) => `"${p}": ${p}`).join(", ");
+        const nonBody = new Set([...(ep.pathParams || []), ...(ep.queryParams || []), ...(ep.headerParams || [])]);
+        const bodyParams = tool.parameters.filter((p) => !nonBody.has(p.name));
+        const bodyEntries = bodyParams
+          .map((p) => {
+            const safeVar = paramMap.get(p.name) || p.name;
+            return `"${p.name}": ${safeVar}`;
+          })
+          .join(", ");
         bodyLogic = `    headers["Content-Type"] = "application/json"\n    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}\n    req_body = json.dumps(body_dict).encode("utf-8") if body_dict else None`;
       }
 
@@ -236,9 +340,10 @@ ${bodyLogic}
     return f"Successfully executed ${tool.name} with inputs"`;
     }
 
+    const toolFnName = toSafePythonIdentifier(tool.name);
     return `
 @mcp.tool()
-def ${toSnakeCase(tool.name)}(${fnArgs}) -> str:
+def ${toolFnName}(${fnArgs}) -> str:
     """${tool.description}
 
     Args:
