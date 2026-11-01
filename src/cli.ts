@@ -41,8 +41,12 @@ Commands:
   init [project-name] [options]
   add-tool <tool-name> [options]
   from-openapi <openapi-spec-path> [options]
+  from-graphql <graphql-sdl-path> [options]
+  from-proto <proto-service-path> [options]
+  mock <spec-or-schema-path> [options]
+  publish-devshelf [server-name] [options]
   inspect "<server-command>" [--ci]
-  deploy [--target cloudflare-workers|cloud-run]
+  deploy [--target cloudflare-workers|cloud-run|docker|aws-lambda|flyio|railway]
   ui [--port 4100]
   benchmark [--iterations 25]
   audit [target-dir]
@@ -60,8 +64,12 @@ Commands:
   init [name]              Scaffolds a new MCP server project (interactive wizard if omitted)
   add-tool <name>          Generates typed MCP tool code and JSON schema snippet
   from-openapi <path>      Converts an OpenAPI / Swagger spec into production MCP tools
+  from-graphql <path>      Converts a GraphQL SDL schema into production MCP tools
+  from-proto <path>        Converts a Protobuf / gRPC service definition into production MCP tools
+  mock <path>              Runs instant in-memory Mock Sandbox Fixture tests on tool schemas
+  publish-devshelf [name]  Formats MCP server into a verified DevShelf catalog entry & PR submission
   inspect <command>        Connects headless inspector to verify MCP JSON-RPC protocol conformance (--ci)
-  deploy                   Generates serverless Cloudflare Workers or Cloud Run container deployment
+  deploy                   Generates serverless / container deployment (Cloudflare, Cloud Run, Docker, Lambda, Fly, Railway)
   ui                       Launches lightweight local Visual Inspector Web UI & live testing studio
   audit [dir]              Runs AgentShield Zero-Leak security audit on MCP server source code
   package [dir]            Generates Dockerfile, client configs (Claude/Cursor) & registry manifest
@@ -85,8 +93,9 @@ Options for 'inspect':
   --ci                     Exit with status code 1 if any conformance check fails
 
 Options for 'deploy':
-  --target                 Deployment target: 'cloudflare-workers' (default) or 'cloud-run'
+  --target                 Deployment target: 'cloudflare-workers' (default), 'cloud-run', 'docker', 'aws-lambda', 'flyio', or 'railway'
   --dir, -d                Target output directory (defaults to current directory)
+  --port, -p               Port number (default: 8080)
 
 Options for 'ui':
   --port, -p               Local port for Visual Inspector UI (default: 4100)
@@ -96,8 +105,10 @@ Options for 'add-tool':
   --desc                   Tool description
   --params                 Comma-separated list of paramName:type (e.g. "query:string,limit:number")
 
-Options for 'from-openapi':
+Options for 'from-openapi', 'from-graphql', 'from-proto':
   --lang, -l               Output language: 'typescript' (default) or 'python'
+  --mock                   Run instant Mock Sandbox Fixture tests on converted tools
+  --publish-devshelf       Generate DevShelf catalog entry & prefilled GitHub submission PR link
 
 Examples:
   npx @ritualdev-lab/mcp-builder-kit init my-sqlite-server
@@ -330,19 +341,17 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     return;
   }
 
-  // 3. mcp-builder from-openapi
-  if (command === "from-openapi") {
+  // 3. mcp-builder from-openapi / from-graphql / from-proto
+  if (command === "from-openapi" || command === "from-graphql" || command === "from-proto") {
     const specPath = args[1];
     if (!specPath || specPath.startsWith("-")) {
-      console.error(
-        "❌ Error: Missing OpenAPI spec file path. Run: mcp-builder from-openapi <spec-path>",
-      );
+      console.error(`❌ Error: Missing schema file path. Run: mcp-builder ${command} <spec-path>`);
       process.exit(1);
     }
 
     const fullPath = resolve(process.cwd(), specPath);
     if (!existsSync(fullPath)) {
-      console.error(`❌ Error: OpenAPI specification file not found at: ${fullPath}`);
+      console.error(`❌ Error: Specification file not found at: ${fullPath}`);
       process.exit(1);
     }
 
@@ -360,25 +369,87 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
     try {
       const content = readFileSync(fullPath, "utf8");
-      const spec = JSON.parse(content);
+      const { detectSchemaType, generateGraphQLServer, generateProtobufServer } = await import(
+        "./proto-graphql.js"
+      );
+      const schemaType =
+        command === "from-graphql"
+          ? "graphql"
+          : command === "from-proto"
+            ? "protobuf"
+            : detectSchemaType(content);
 
-      console.log(`\n🔄 Converting OpenAPI specification to MCP Tools (${language})...`);
-      const result = OpenApiToMcpConverter.convert({
-        spec,
-        language,
-      });
+      let tools: ToolDefinition[] = [];
+      let generatedCode = "";
 
-      console.log(`✅ Converted ${result.tools.length} endpoints to MCP tools:`);
-      for (const t of result.tools) {
+      if (schemaType === "graphql" || fullPath.endsWith(".graphql") || fullPath.endsWith(".gql")) {
+        console.log(`\n🔄 Converting GraphQL Schema to MCP Tools (${language})...`);
+        const result = generateGraphQLServer(content, { language });
+        tools = result.tools;
+        generatedCode = result.generatedCode;
+      } else if (
+        schemaType === "protobuf" ||
+        fullPath.endsWith(".proto") ||
+        fullPath.endsWith(".proto3")
+      ) {
+        console.log(`\n🔄 Converting Protobuf / gRPC service to MCP Tools (${language})...`);
+        const result = generateProtobufServer(content, { language });
+        tools = result.tools;
+        generatedCode = result.generatedCode;
+      } else {
+        const spec = JSON.parse(content);
+        console.log(`\n🔄 Converting OpenAPI specification to MCP Tools (${language})...`);
+        const result = OpenApiToMcpConverter.convert({
+          spec,
+          language,
+        });
+        tools = result.tools;
+        generatedCode = result.generatedCode;
+      }
+
+      console.log(`✅ Converted ${tools.length} endpoints/operations to MCP tools:`);
+      for (const t of tools) {
         console.log(`   + ${t.name} (${t.parameters.length} parameters)`);
       }
 
+      // Mock Sandbox Fixture Mode (--mock)
+      if (args.includes("--mock")) {
+        console.log("\n🧪 Running Mock Sandbox Fixture Test Suite...");
+        const { runMockSandboxTest } = await import("./mock-fixture.js");
+        const mockSummary = await runMockSandboxTest(tools);
+        console.log(
+          `✅ Mock Sandbox: ${mockSummary.passed}/${mockSummary.totalTools} tools passed (${mockSummary.avgLatencyMs}ms avg latency)`,
+        );
+        for (const res of mockSummary.results) {
+          console.log(
+            `   • ${res.toolName}: ${res.passed ? "PASSED" : "FAILED"} (${res.latencyMs}ms)`,
+          );
+        }
+      }
+
+      // Direct DevShelf Catalog Export (--publish-devshelf)
+      if (args.includes("--publish-devshelf")) {
+        const { DevShelfExporter } = await import("./devshelf-export.js");
+        const baseName =
+          fullPath
+            .split(/[/\\]/)
+            .pop()
+            ?.replace(/\.[^/.]+$/, "") || "mcp-server";
+        const exportRes = DevShelfExporter.exportToFiles({
+          serverName: baseName,
+          language: language === "python" ? "Python" : "TypeScript / Node.js",
+        });
+        console.log("\n🚀 Direct DevShelf Catalog Export generated:");
+        console.log(`   + Catalog Entry: ${exportRes.filePath}`);
+        console.log(`   👉 Submission Link: ${exportRes.submissionUrl}\n`);
+      }
+
       console.log("\n📦 Generated MCP Code:\n");
-      console.log(result.generatedCode);
+      console.log(generatedCode);
       return;
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : "Failed to parse spec";
-      console.error(`❌ Failed to convert OpenAPI spec: ${errorMsg}`);
+      console.error(`❌ Failed to convert specification: ${errorMsg}`);
       process.exit(1);
     }
   }
@@ -799,18 +870,28 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
   // 12. mcp-builder deploy
   if (command === "deploy") {
-    let target: "cloudflare-workers" | "cloud-run" = "cloudflare-workers";
+    let target: any = "cloudflare-workers";
     let targetDir = process.cwd();
+    let port = 8080;
+    const validTargets = [
+      "cloudflare-workers",
+      "cloud-run",
+      "docker",
+      "aws-lambda",
+      "flyio",
+      "fly",
+      "railway",
+    ];
 
     for (let i = 1; i < args.length; i++) {
       const arg = args[i];
       if (arg === "--target" && args[i + 1]) {
         const tVal = args[i + 1].toLowerCase();
-        if (tVal === "cloudflare-workers" || tVal === "cloud-run") {
+        if (validTargets.includes(tVal)) {
           target = tVal;
         } else {
           console.error(
-            `❌ Error: Invalid target '${args[i + 1]}'. Choose 'cloudflare-workers' or 'cloud-run'.`,
+            `❌ Error: Invalid target '${args[i + 1]}'. Choose one of: ${validTargets.join(", ")}.`,
           );
           process.exit(1);
         }
@@ -818,10 +899,14 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       } else if ((arg === "--dir" || arg === "-d") && args[i + 1]) {
         targetDir = resolve(process.cwd(), args[i + 1]);
         i++;
+      } else if ((arg === "--port" || arg === "-p") && args[i + 1]) {
+        const p = Number.parseInt(args[i + 1], 10);
+        if (!Number.isNaN(p)) port = p;
+        i++;
       }
     }
 
-    console.log("\n🚀 Generating Serverless MCP Deployment Configuration");
+    console.log("\n🚀 Generating Production MCP Deployment Configuration");
     console.log(`   • Target Platform: ${target}`);
     console.log(`   • Output Dir:      ${targetDir}\n`);
 
@@ -829,9 +914,10 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     const result = McpServerDeployer.generateDeployment({
       target,
       outputDir: targetDir,
+      port,
     });
 
-    console.log("✅ Created Serverless Deployment Manifests:");
+    console.log("✅ Created Deployment Manifests:");
     for (const f of result.filesCreated) {
       console.log(`   + ${f}`);
     }
@@ -841,6 +927,97 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       console.log(`   ${step}`);
     }
     console.log("");
+    return;
+  }
+
+  // 12b. mcp-builder mock
+  if (command === "mock") {
+    const specPath = args[1];
+    if (!specPath || specPath.startsWith("-")) {
+      console.error("❌ Error: Missing schema path. Run: mcp-builder mock <schema-path>");
+      process.exit(1);
+    }
+
+    const fullPath = resolve(process.cwd(), specPath);
+    if (!existsSync(fullPath)) {
+      console.error(`❌ Error: File not found at: ${fullPath}`);
+      process.exit(1);
+    }
+
+    const content = readFileSync(fullPath, "utf8");
+    const { detectSchemaType, convertGraphQLToTools, convertProtobufToTools } = await import(
+      "./proto-graphql.js"
+    );
+    const schemaType = detectSchemaType(content);
+
+    let tools: ToolDefinition[] = [];
+    if (schemaType === "graphql" || fullPath.endsWith(".graphql") || fullPath.endsWith(".gql")) {
+      tools = convertGraphQLToTools(content);
+    } else if (
+      schemaType === "protobuf" ||
+      fullPath.endsWith(".proto") ||
+      fullPath.endsWith(".proto3")
+    ) {
+      tools = convertProtobufToTools(content);
+    } else {
+      const spec = JSON.parse(content);
+      const res = OpenApiToMcpConverter.convert({ spec });
+      tools = res.tools;
+    }
+
+    console.log(`\n🧪 Running Mock Sandbox Fixture Suite across ${tools.length} tools...`);
+    const { runMockSandboxTest } = await import("./mock-fixture.js");
+    const summary = await runMockSandboxTest(tools);
+
+    console.log(
+      `\n┌──────────────────────────────────────────────────────────────┐\n` +
+        `│ 🧪 Mock Sandbox Fixture Verification Results:                 │\n` +
+        `│   Total Tools Tested:   ${String(summary.totalTools).padEnd(36)} │\n` +
+        `│   Passed:               ${String(summary.passed).padEnd(36)} │\n` +
+        `│   Failed:               ${String(summary.failed).padEnd(36)} │\n` +
+        `│   Average Latency:      ${`${summary.avgLatencyMs}ms`.padEnd(36)} │\n` +
+        `└──────────────────────────────────────────────────────────────┘`,
+    );
+
+    for (const r of summary.results) {
+      console.log(`   ${r.passed ? "✅" : "❌"} ${r.toolName} (${r.latencyMs}ms)`);
+    }
+    console.log("");
+    return;
+  }
+
+  // 12c. mcp-builder publish-devshelf
+  if (command === "publish-devshelf") {
+    const serverName = args[1] || "mcp-server";
+    let targetDir = process.cwd();
+    let repoUrl: string | undefined;
+
+    for (let i = 2; i < args.length; i++) {
+      const arg = args[i];
+      if ((arg === "--dir" || arg === "-d") && args[i + 1]) {
+        targetDir = resolve(process.cwd(), args[i + 1]);
+        i++;
+      } else if (arg === "--repo" && args[i + 1]) {
+        repoUrl = args[i + 1];
+        i++;
+      }
+    }
+
+    const { DevShelfExporter } = await import("./devshelf-export.js");
+    const result = DevShelfExporter.exportToFiles(
+      {
+        serverName,
+        repoUrl,
+        outputDir: targetDir,
+      },
+      targetDir,
+    );
+
+    console.log(`\n🚀 DevShelf Catalog Export Ready for '${serverName}':`);
+    console.log(`   + Catalog JSON: ${result.filePath}`);
+    console.log(`   + Submission:   ${resolve(targetDir, ".devshelf-submission.md")}`);
+    console.log(`\n👉 Submit 1-Click PR / Issue to DevShelf Directory:`);
+    console.log(`   ${result.submissionUrl}\n`);
     return;
   }
 

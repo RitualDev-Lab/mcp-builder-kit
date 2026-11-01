@@ -15,3 +15,6 @@ export * from "./dashboard.js";
 export * from "./templates/typescript.js";
 export * from "./templates/python.js";
 export * from "./benchmark.js";
+export * from "./proto-graphql.js";
+export * from "./mock-fixture.js";
+export * from "./devshelf-export.js";

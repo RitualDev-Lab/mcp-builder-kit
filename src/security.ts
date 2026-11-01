@@ -248,8 +248,7 @@ export class AgentShieldMcpAuditor {
                 line: lineIdx + 1,
                 snippet: line.trim().slice(0, 80),
                 description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)}${isPureHex ? " [hex]" : ""})`,
-                remediation:
-                  "Move high-entropy API key or token to process.env or a secret vault",
+                remediation: "Move high-entropy API key or token to process.env or a secret vault",
               });
             }
           }

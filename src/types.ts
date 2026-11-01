@@ -63,7 +63,10 @@ export interface ToolDefinition {
   description: string;
   parameters: ToolParameter[];
   apiEndpoint?: ApiEndpointMetadata;
+  executionCode?: string;
 }
+
+export type McpToolDefinition = ToolDefinition;
 
 export interface ResourceDefinition {
   uri: string;

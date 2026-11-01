@@ -185,9 +185,7 @@ export class OpenApiToMcpConverter {
 
         // Check for supported structured content types: application/json, multipart/form-data, application/x-www-form-urlencoded
         const isMultipart = Boolean(requestBody?.content?.["multipart/form-data"]);
-        const isUrlEncoded = Boolean(
-          requestBody?.content?.["application/x-www-form-urlencoded"],
-        );
+        const isUrlEncoded = Boolean(requestBody?.content?.["application/x-www-form-urlencoded"]);
         const bodyContent =
           requestBody?.content?.["application/json"] ||
           requestBody?.content?.["multipart/form-data"] ||

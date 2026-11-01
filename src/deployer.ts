@@ -1,8 +1,17 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+export type DeployTarget =
+  | "cloudflare-workers"
+  | "cloud-run"
+  | "docker"
+  | "aws-lambda"
+  | "flyio"
+  | "fly"
+  | "railway";
+
 export interface DeployOptions {
-  target: "cloudflare-workers" | "cloud-run";
+  target: DeployTarget;
   serverDir?: string;
   outputDir?: string;
   projectName?: string;
@@ -22,9 +31,13 @@ export interface DeployResult {
 /**
  * McpServerDeployer
  *
- * Automates serverless deployment packaging for Model Context Protocol servers:
+ * Automates serverless and containerized deployment packaging for Model Context Protocol servers:
  * 1. Cloudflare Workers (Zero-infra serverless edge MCP with SSE transport).
  * 2. Google Cloud Run (Containerized autoscaling MCP with HTTP/SSE & Docker).
+ * 3. Docker (Multi-stage production build, non-root user, docker-compose).
+ * 4. AWS Lambda (API Gateway v2 HTTP API & Function URLs with Serverless Framework).
+ * 5. Fly.io (Global micro-VM with auto-stop machines and fly.toml).
+ * 6. Railway (Zero-config Nixpacks deployment with railway.json and Procfile).
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: Deployer utility class
 export class McpServerDeployer {
@@ -34,10 +47,13 @@ export class McpServerDeployer {
       mkdirSync(targetDir, { recursive: true });
     }
     const projectName = options.serverName || options.projectName || "mcp-server";
+    const port = options.port || 8080;
     const filesGenerated: string[] = [];
     const instructions: string[] = [];
 
-    if (options.target === "cloudflare-workers") {
+    const normTarget = options.target.toLowerCase();
+
+    if (normTarget === "cloudflare-workers") {
       const wranglerToml = `name = "${projectName}"
 main = "src/worker.ts"
 compatibility_date = "2024-09-23"
@@ -203,7 +219,7 @@ export default {
       instructions.push("1. Install Wrangler CLI: npm install -D wrangler");
       instructions.push("2. Test locally on Cloudflare edge: npx wrangler dev");
       instructions.push("3. Deploy to global edge network: npx wrangler deploy");
-    } else {
+    } else if (normTarget === "cloud-run") {
       // Cloud Run target
       const dockerfile = `FROM node:20-slim AS builder
 WORKDIR /app
@@ -252,6 +268,241 @@ spec:
       );
       instructions.push(
         `2. Deploy to Cloud Run: gcloud run deploy ${projectName} --image gcr.io/PROJECT_ID/${projectName} --platform managed --allow-unauthenticated`,
+      );
+    } else if (normTarget === "docker") {
+      // Generic Docker & Docker Compose target
+      const dockerfile = `# Multi-stage production container for Model Context Protocol (MCP) server
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build || true
+
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=${port}
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY --from=builder /app/dist ./dist
+
+USER node
+EXPOSE ${port}
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \\
+  CMD node -e "require('http').get('http://localhost:${port}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
+CMD ["node", "dist/index.js"]
+`;
+      const dockerignore = `node_modules
+dist
+.git
+.env*
+*.log
+coverage
+.nyc_output
+`;
+      const dockerCompose = `version: "3.8"
+services:
+  ${projectName}:
+    build: .
+    image: ${projectName}:latest
+    container_name: ${projectName}
+    restart: unless-stopped
+    ports:
+      - "${port}:${port}"
+    environment:
+      - PORT=${port}
+      - NODE_ENV=production
+      - MCP_SERVER_NAME=${projectName}
+`;
+      const dockerfilePath = join(targetDir, "Dockerfile");
+      const dockerignorePath = join(targetDir, ".dockerignore");
+      const composePath = join(targetDir, "docker-compose.yml");
+
+      writeFileSync(dockerfilePath, dockerfile, "utf8");
+      writeFileSync(dockerignorePath, dockerignore, "utf8");
+      writeFileSync(composePath, dockerCompose, "utf8");
+      filesGenerated.push("Dockerfile", ".dockerignore", "docker-compose.yml");
+
+      instructions.push(`1. Build Docker container: docker build -t ${projectName} .`);
+      instructions.push(`2. Run container: docker run -p ${port}:${port} ${projectName}`);
+      instructions.push("3. Or start via Docker Compose: docker compose up -d");
+    } else if (normTarget === "aws-lambda") {
+      // AWS Lambda target
+      const lambdaTs = `/**
+ * AWS Lambda Handler for Model Context Protocol (MCP) Server
+ * Powered by @ritualdev-lab/mcp-builder-kit
+ *
+ * Compatible with AWS API Gateway HTTP APIs (v2) and Lambda Function URLs
+ */
+
+export const handler = async (event: any, context: any) => {
+  const method = event.requestContext?.http?.method || event.httpMethod || "POST";
+  const path = event.requestContext?.http?.path || event.path || "/";
+
+  // Health check endpoint
+  if (method === "GET" && (path === "/health" || path === "/")) {
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "healthy",
+        server: "${projectName}",
+        target: "aws-lambda",
+        timestamp: new Date().toISOString(),
+      }),
+    };
+  }
+
+  // Parse JSON-RPC body
+  let body = event.body;
+  if (event.isBase64Encoded && body) {
+    body = Buffer.from(body, "base64").toString("utf-8");
+  }
+  const rpc = typeof body === "string" ? JSON.parse(body || "{}") : body || {};
+
+  if (rpc.method === "initialize") {
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: rpc.id,
+        result: {
+          protocolVersion: "2024-11-05",
+          capabilities: { tools: {} },
+          serverInfo: { name: "${projectName}", version: "1.0.0" },
+        },
+      }),
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: rpc.id ?? null,
+      result: {
+        content: [
+          {
+            type: "text",
+            text: \`[AWS Lambda MCP Server: ${projectName}] Processed \${rpc.method || "call"}\`,
+          },
+        ],
+      },
+    }),
+  };
+};
+`;
+      const serverlessYml = `service: ${projectName}
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    MCP_SERVER_NAME: "${projectName}"
+    NODE_ENV: production
+
+functions:
+  mcp:
+    handler: dist/lambda.handler
+    events:
+      - httpApi: '*'
+`;
+      const srcDir = join(targetDir, "src");
+      if (!existsSync(srcDir)) mkdirSync(srcDir, { recursive: true });
+      const lambdaPath = join(srcDir, "lambda.ts");
+      const serverlessPath = join(targetDir, "serverless.yml");
+
+      writeFileSync(lambdaPath, lambdaTs, "utf8");
+      writeFileSync(serverlessPath, serverlessYml, "utf8");
+      filesGenerated.push("src/lambda.ts", "serverless.yml");
+
+      instructions.push("1. Install Serverless Framework: npm install -g serverless");
+      instructions.push("2. Build project: npm run build");
+      instructions.push("3. Deploy to AWS Lambda: serverless deploy");
+    } else if (normTarget === "flyio" || normTarget === "fly") {
+      // Fly.io target
+      const flyToml = `app = "${projectName}"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.fly"
+
+[http_service]
+  internal_port = ${port}
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+`;
+      const dockerfileFly = `FROM node:20-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build || true
+
+FROM node:20-slim
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=${port}
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY --from=builder /app/dist ./dist
+EXPOSE ${port}
+CMD ["node", "dist/index.js"]
+`;
+      const flyPath = join(targetDir, "fly.toml");
+      const dockerfilePath = join(targetDir, "Dockerfile.fly");
+
+      writeFileSync(flyPath, flyToml, "utf8");
+      writeFileSync(dockerfilePath, dockerfileFly, "utf8");
+      filesGenerated.push("fly.toml", "Dockerfile.fly");
+
+      instructions.push("1. Install Fly CLI: https://fly.io/docs/hands-on/install-flyctl/");
+      instructions.push("2. Launch Fly app: fly launch --no-deploy");
+      instructions.push("3. Deploy to Fly edge network: fly deploy");
+    } else if (normTarget === "railway") {
+      // Railway target
+      const railwayJson = `{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "node dist/index.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
+`;
+      const procfile = "web: node dist/index.js\n";
+      const railwayPath = join(targetDir, "railway.json");
+      const procfilePath = join(targetDir, "Procfile");
+
+      writeFileSync(railwayPath, railwayJson, "utf8");
+      writeFileSync(procfilePath, procfile, "utf8");
+      filesGenerated.push("railway.json", "Procfile");
+
+      instructions.push("1. Install Railway CLI: npm install -g @railway/cli");
+      instructions.push("2. Link Railway project: railway init");
+      instructions.push("3. Deploy to Railway cloud: railway up");
+    } else {
+      throw new Error(
+        `Unsupported deployment target '${options.target}'. Valid targets: cloudflare-workers, cloud-run, docker, aws-lambda, flyio, railway.`,
       );
     }
 

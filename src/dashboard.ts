@@ -61,7 +61,17 @@ export class McpVisualInspectorServer {
             description: p.description || "",
           };
           if (p.required) required.push(p.name);
-          defaultParams[p.name] = p.default ?? (p.type === "number" ? 0 : p.type === "boolean" ? false : p.type === "array" ? [] : p.type === "object" ? {} : "");
+          defaultParams[p.name] =
+            p.default ??
+            (p.type === "number"
+              ? 0
+              : p.type === "boolean"
+                ? false
+                : p.type === "array"
+                  ? []
+                  : p.type === "object"
+                    ? {}
+                    : "");
         }
 
         this.toolsCatalog.set(t.name, {
@@ -105,7 +115,11 @@ export class McpVisualInspectorServer {
         },
         required: ["bucket", "key"],
       },
-      defaultParams: { bucket: "production-data", key: "exports/report.json", filePath: "./report.json" },
+      defaultParams: {
+        bucket: "production-data",
+        key: "exports/report.json",
+        filePath: "./report.json",
+      },
     });
 
     this.toolsCatalog.set("healthcheck", {
@@ -433,7 +447,12 @@ export class McpVisualInspectorServer {
               res.end(JSON.stringify(validation));
             } catch {
               res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ valid: false, errors: [{ field: "$", message: "Malformed JSON" }] }));
+              res.end(
+                JSON.stringify({
+                  valid: false,
+                  errors: [{ field: "$", message: "Malformed JSON" }],
+                }),
+              );
             }
           });
           return;

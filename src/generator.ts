@@ -363,6 +363,20 @@ ${headerAppenders ? `${headerAppenders}\n` : ""}
       ],
     };
   }`;
+    } else if (tool.executionCode) {
+      handlerBody = `  try {
+    ${tool.executionCode}
+  } catch (err: any) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: \`Tool execution failed: \${err.message || String(err)}\`,
+        },
+      ],
+    };
+  }`;
     } else {
       handlerBody = `  // TODO: Implement custom tool logic for ${tool.name}
   return {
