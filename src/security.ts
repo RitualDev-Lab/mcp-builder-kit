@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { McpSecurityAuditReport, SecurityFinding } from "./types.js";
+import { McpCodeGenerator } from "./generator.js";
+import type { McpSecurityAuditReport, SecurityFinding, ToolDefinition } from "./types.js";
 
 /**
  * Built-in Secret Detection and High-Risk Pattern Signatures (Powered by AgentShield engine rules)
@@ -187,6 +188,126 @@ export class AgentShieldMcpAuditor {
       isSecure,
       summary,
     };
+  }
+
+  /**
+   * Scans a single in-memory source code string for hardcoded secrets,
+   * command injections, and unsafe patterns before writing to disk.
+   */
+  public static auditSourceCode(content: string, filename = "server.ts"): SecurityFinding[] {
+    const findings: SecurityFinding[] = [];
+    const lines = content.split("\n");
+
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const line = lines[lineIdx];
+
+      for (const rule of SECURITY_RULES) {
+        const match = line.match(rule.regex);
+        if (match) {
+          findings.push({
+            id: rule.id,
+            type: rule.type,
+            severity: rule.severity,
+            file: filename,
+            line: lineIdx + 1,
+            snippet: line.trim().slice(0, 80),
+            description: rule.description,
+            remediation: rule.remediation,
+          });
+        }
+      }
+
+      // Shannon Entropy Analysis
+      const tokenMatches = line.match(/(?:['"`])([a-zA-Z0-9+/=_-]{16,120})(?:['"`])/g);
+      if (tokenMatches) {
+        for (const t of tokenMatches) {
+          const rawStr = t.slice(1, -1);
+          if (
+            rawStr.startsWith("http://") ||
+            rawStr.startsWith("https://") ||
+            rawStr.includes(" ")
+          ) {
+            continue;
+          }
+          const isPureHex = /^[0-9a-fA-F]+$/.test(rawStr);
+          const entropy = AgentShieldMcpAuditor.calculateEntropy(rawStr);
+          const isSecret = isPureHex
+            ? rawStr.length >= 16 && entropy >= 3.2
+            : rawStr.length >= 20 && entropy >= 4.4;
+
+          if (isSecret) {
+            const alreadyCaptured = findings.some(
+              (f) => f.file === filename && f.line === lineIdx + 1,
+            );
+            if (!alreadyCaptured) {
+              findings.push({
+                id: "SEC-ENT-001",
+                type: "hardcoded_secret",
+                severity: "high",
+                file: filename,
+                line: lineIdx + 1,
+                snippet: line.trim().slice(0, 80),
+                description: `High-entropy secret token detected (Shannon Entropy: ${entropy.toFixed(2)}${isPureHex ? " [hex]" : ""})`,
+                remediation:
+                  "Move high-entropy API key or token to process.env or a secret vault",
+              });
+            }
+          }
+        }
+      }
+    }
+    return findings;
+  }
+
+  /**
+   * Audits a newly generated ToolDefinition before packaging or scaffolding
+   */
+  public static auditTool(
+    tool: ToolDefinition,
+    language: "typescript" | "python" = "typescript",
+  ): McpSecurityAuditReport {
+    const code =
+      language === "typescript"
+        ? McpCodeGenerator.generateTypeScriptTool(tool)
+        : McpCodeGenerator.generatePythonTool(tool);
+
+    const filename = `${tool.name}.${language === "typescript" ? "ts" : "py"}`;
+    const findings = AgentShieldMcpAuditor.auditSourceCode(code, filename);
+    const summary = {
+      critical: findings.filter((f) => f.severity === "critical").length,
+      high: findings.filter((f) => f.severity === "high").length,
+      medium: findings.filter((f) => f.severity === "medium").length,
+      low: findings.filter((f) => f.severity === "low").length,
+    };
+    const deductions =
+      summary.critical * 30 + summary.high * 15 + summary.medium * 8 + summary.low * 2;
+    const score = Math.max(0, 100 - deductions);
+    const isSecure = summary.critical === 0 && summary.high === 0 && summary.medium === 0;
+
+    return {
+      targetDir: `tool:${tool.name}`,
+      scannedFilesCount: 1,
+      findings,
+      score,
+      isSecure,
+      summary,
+    };
+  }
+
+  /**
+   * Automated Security Pre-Flight Check
+   */
+  public static runPreflight(
+    targetDir: string,
+    options: { failOnCritical?: boolean } = {},
+  ): McpSecurityAuditReport {
+    const report = AgentShieldMcpAuditor.auditDirectory(targetDir);
+    if (options.failOnCritical && report.summary.critical > 0) {
+      throw new Error(
+        `AgentShield Security Pre-Flight Failed: Found ${report.summary.critical} critical security vulnerabilities in ${targetDir}`,
+      );
+    }
+    return report;
   }
 
   /**

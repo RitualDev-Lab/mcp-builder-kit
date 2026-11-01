@@ -251,10 +251,22 @@ export class McpCodeGenerator {
           })
           .join("\n");
 
-        bodyHandling = `headers["Content-Type"] = "application/json";
+        if (ep.isMultipart) {
+          bodyHandling = `const formData = new FormData();
+    const bodyPayload = { ...args };
+${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
+    for (const [key, value] of Object.entries(bodyPayload)) {
+      if (value !== undefined && value !== null) {
+        formData.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+      }
+    }
+    const requestBody = formData;`;
+        } else {
+          bodyHandling = `headers["Content-Type"] = "application/json";
     const bodyPayload = { ...args };
 ${deleteStatements}${bodyRemaps ? `\n${bodyRemaps}` : ""}
     const requestBody = JSON.stringify(bodyPayload);`;
+        }
       }
 
       const authHeaderName = ep.authHeader?.name || "Authorization";
@@ -284,6 +296,24 @@ ${queryAppenders ? `${queryAppenders}\n` : ""}
       ...(process.env.API_KEY ? ${authAssignment} : {}),
     };
 ${headerAppenders ? `${headerAppenders}\n` : ""}
+    // Dynamic per-user runtime auth pass-through via MCP headers or context
+    const dynamicAuth =
+      (args as any)?._meta?.headers?.authorization ||
+      (args as any)?._meta?.headers?.Authorization ||
+      (args as any)?._meta?.headers?.[${JSON.stringify(authHeaderName.toLowerCase())}] ||
+      (args as any)?._meta?.headers?.[${JSON.stringify(authHeaderName)}] ||
+      (args as any)?._auth_token ||
+      (args as any)?._apiKey;
+    if (dynamicAuth) {
+      headers[${JSON.stringify(authHeaderName)}] = ${authHeaderPrefix ? `String(dynamicAuth).startsWith(${JSON.stringify(authHeaderPrefix)}) ? String(dynamicAuth) : \`${authHeaderPrefix}\${dynamicAuth}\`` : "String(dynamicAuth)"};
+    }
+    if ((args as any)?._meta?.headers && typeof (args as any)._meta.headers === "object") {
+      for (const [headerKey, headerVal] of Object.entries((args as any)._meta.headers)) {
+        if (typeof headerVal === "string" && !headers[headerKey]) {
+          headers[headerKey] = headerVal;
+        }
+      }
+    }
     // 4. Prepare request payload
     ${bodyHandling}
 
@@ -449,7 +479,24 @@ ${handlerBody}
             return `${JSON.stringify(wireName)}: ${safeVar}`;
           })
           .join(", ");
-        bodyLogic = `    headers["Content-Type"] = "application/json"\n    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}\n    req_body = json.dumps(body_dict).encode("utf-8") if body_dict else None`;
+
+        if (ep.isMultipart) {
+          bodyLogic = `    boundary = f"----McpBoundary{os.urandom(8).hex()}"
+    headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+    form_lines = []
+    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}
+    for k, v in body_dict.items():
+        form_lines.append(f"--{boundary}".encode("utf-8"))
+        form_lines.append(f'Content-Disposition: form-data; name="{k}"\\r\\n'.encode("utf-8"))
+        form_lines.append(str(v).encode("utf-8"))
+    if form_lines:
+        form_lines.append(f"--{boundary}--\\r\\n".encode("utf-8"))
+        req_body = b"\\r\\n".join(form_lines)
+    else:
+        req_body = None`;
+        } else {
+          bodyLogic = `    headers["Content-Type"] = "application/json"\n    body_dict = {k: v for k, v in {${bodyEntries}}.items() if v is not None}\n    req_body = json.dumps(body_dict).encode("utf-8") if body_dict else None`;
+        }
       }
 
       const authHeaderName = ep.authHeader?.name || "Authorization";
@@ -476,6 +523,12 @@ ${queryLogic ? `${queryLogic}\n` : ""}
     api_key = os.environ.get("API_KEY")
     if api_key:
         headers[${JSON.stringify(authHeaderName)}] = ${authPyVal}
+    # Dynamic per-user runtime auth pass-through
+    dynamic_token = None
+    if "_meta" in locals() and isinstance(locals().get("_meta"), dict):
+        dynamic_token = locals()["_meta"].get("headers", {}).get("Authorization") or locals()["_meta"].get("headers", {}).get(${JSON.stringify(authHeaderName)})
+    if dynamic_token:
+        headers[${JSON.stringify(authHeaderName)}] = dynamic_token if dynamic_token.startswith(${JSON.stringify(authHeaderPrefix)}) else f"${authHeaderPrefix}{dynamic_token}"
 ${headerEntries ? `${headerEntries}\n` : ""}
     # 4. Prepare body payload
 ${bodyLogic}
@@ -544,6 +597,14 @@ export async function read${toPascalCase(resource.name)}Resource(): Promise<{
   }
 
   private static toZodType(param: ToolParameter): string {
+    if (param.oneOf && param.oneOf.length > 0) {
+      const branches = param.oneOf.map((p) => McpCodeGenerator.toZodType(p));
+      return `z.union([${branches.join(", ")}])`;
+    }
+    if (param.anyOf && param.anyOf.length > 0) {
+      const branches = param.anyOf.map((p) => McpCodeGenerator.toZodType(p));
+      return `z.union([${branches.join(", ")}])`;
+    }
     switch (param.type) {
       case "number":
         return "z.number()";
@@ -559,6 +620,18 @@ export async function read${toPascalCase(resource.name)}Resource(): Promise<{
   }
 
   private static toPythonType(param: ToolParameter): string {
+    if (param.oneOf && param.oneOf.length > 0) {
+      const branches = Array.from(
+        new Set(param.oneOf.map((p) => McpCodeGenerator.toPythonType(p))),
+      );
+      return branches.length > 1 ? `Union[${branches.join(", ")}]` : branches[0];
+    }
+    if (param.anyOf && param.anyOf.length > 0) {
+      const branches = Array.from(
+        new Set(param.anyOf.map((p) => McpCodeGenerator.toPythonType(p))),
+      );
+      return branches.length > 1 ? `Union[${branches.join(", ")}]` : branches[0];
+    }
     switch (param.type) {
       case "number":
         return "float";

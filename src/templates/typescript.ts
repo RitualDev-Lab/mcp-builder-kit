@@ -163,11 +163,12 @@ export class ${className} {
 
     // 2. Tool Invocation
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name, arguments: args, _meta } = request.params as any;
+      const effectiveArgs = { ...(args || {}), _meta };
 
       if (name === "echo") {
         const schema = z.object({ message: z.string() });
-        const parsed = schema.safeParse(args);
+        const parsed = schema.safeParse(effectiveArgs);
         if (!parsed.success) {
           throw new Error(\`Invalid arguments for echo: \${parsed.error.message}\`);
         }

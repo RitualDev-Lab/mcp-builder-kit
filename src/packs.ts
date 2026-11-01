@@ -92,6 +92,119 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
     ],
     sampleTools: ["All 25+ production-grade enterprise tools included"],
   },
+  "snowflake-connector-pack": {
+    id: "pdt_mcp_snowflake_pack",
+    name: "Snowflake Enterprise Data Warehouse MCP Pack",
+    category: "database",
+    priceUsd: 59,
+    type: "one_time",
+    description:
+      "Production Snowflake data warehouse connector with query timeout guard, auto-suspend checks, and schema introspection.",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=snowflake",
+    features: [
+      "Snowflake session authentication with key-pair and token auth",
+      "Virtual warehouse auto-suspend guard and query cost caps",
+      "Multi-statement injection blocking and AST query sanitization",
+      "Table schema and stage exploration with JSON diffs",
+    ],
+    sampleTools: [
+      "snowflake_query",
+      "snowflake_describe_table",
+      "snowflake_list_databases",
+      "snowflake_stage_file",
+    ],
+  },
+  "bigquery-connector-pack": {
+    id: "pdt_mcp_bigquery_pack",
+    name: "Google Cloud BigQuery Analytics MCP Pack",
+    category: "database",
+    priceUsd: 59,
+    type: "one_time",
+    description:
+      "High-performance BigQuery analytics toolkit with dry-run cost estimation, maximum bytes billed limit, and dataset inspection.",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=bigquery",
+    features: [
+      "Dry-run query validator estimating exact bytes scanned and cost",
+      "Strict maximum bytes billed circuit breaker per query",
+      "Partitioned & clustered table query optimization",
+      "Dataset, table, and routine enumeration with IAM filtering",
+    ],
+    sampleTools: [
+      "bigquery_query_dry_run",
+      "bigquery_execute_query",
+      "bigquery_get_table_schema",
+      "bigquery_list_datasets",
+    ],
+  },
+  "aws-s3-r2-storage-pack": {
+    id: "pdt_mcp_s3_r2_pack",
+    name: "AWS S3 & Cloudflare R2 Object Storage MCP Pack",
+    category: "devops",
+    priceUsd: 49,
+    type: "one_time",
+    description:
+      "Enterprise multi-cloud object storage connector for AWS S3 and Cloudflare R2 with zero-egress presigned URLs and streaming uploads.",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=s3_r2",
+    features: [
+      "Dual AWS S3 & Cloudflare R2 endpoint routing",
+      "Time-limited presigned URL generation for reads and writes",
+      "Multipart chunked upload with automated resume",
+      "Zero-egress acceleration and bucket prefix pagination",
+    ],
+    sampleTools: [
+      "s3_get_object",
+      "s3_put_object",
+      "s3_list_objects",
+      "r2_generate_presigned_url",
+      "s3_delete_object",
+    ],
+  },
+  "stripe-webhooks-pack": {
+    id: "pdt_mcp_stripe_webhooks_pack",
+    name: "Stripe Webhooks & Billing Lifecycle MCP Pack",
+    category: "payments",
+    priceUsd: 49,
+    type: "one_time",
+    description:
+      "Secure Stripe billing lifecycle and webhook event processor with HMAC-SHA256 signature verification and replay prevention.",
+    checkoutUrl:
+      "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=stripe_webhooks",
+    features: [
+      "Cryptographic HMAC-SHA256 stripe-signature header verification",
+      "Replay attack protection with timestamp tolerance window",
+      "Idempotent event dispatcher for payment and subscription events",
+      "Customer billing portal session generator",
+    ],
+    sampleTools: [
+      "stripe_verify_webhook_signature",
+      "stripe_handle_event",
+      "stripe_get_subscription_status",
+      "stripe_create_portal_session",
+    ],
+  },
+  "redis-enterprise-pack": {
+    id: "pdt_mcp_redis_pack",
+    name: "Redis Enterprise Cache & Pub/Sub MCP Pack",
+    category: "database",
+    priceUsd: 39,
+    type: "one_time",
+    description:
+      "Production Redis caching, atomic token-bucket rate limiting, and pub/sub message broadcaster with cursor SCAN iteration.",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=redis",
+    features: [
+      "Non-blocking cursor-based SCAN pagination (no blocking KEYS *)",
+      "Sliding-window token bucket atomic rate limiter",
+      "Cache-aside pattern helper with TTL enforcement and NX/XX flags",
+      "Pub/sub event channel broadcast with message ack",
+    ],
+    sampleTools: [
+      "redis_get_cached",
+      "redis_set_with_ttl",
+      "redis_publish_event",
+      "redis_rate_limit_check",
+      "redis_flush_keys_by_pattern",
+    ],
+  },
 };
 
 /**

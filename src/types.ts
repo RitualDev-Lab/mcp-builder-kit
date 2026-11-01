@@ -35,6 +35,10 @@ export interface ToolParameter {
   description?: string;
   required?: boolean;
   default?: unknown;
+  oneOf?: ToolParameter[];
+  anyOf?: ToolParameter[];
+  format?: string;
+  isFileUpload?: boolean;
 }
 
 export interface ApiEndpointMetadata {
@@ -44,6 +48,8 @@ export interface ApiEndpointMetadata {
   queryParams?: string[];
   headerParams?: string[];
   hasBody?: boolean;
+  isMultipart?: boolean;
+  contentType?: string;
   baseUrlVar?: string;
   wireParamMap?: Record<string, string>;
   authHeader?: {
@@ -175,6 +181,7 @@ export interface McpPackageOptions {
   entrypoint?: string;
   port?: number;
   envVars?: string[];
+  skipSecurityPreflight?: boolean;
 }
 
 export interface McpPackageResult {
@@ -184,6 +191,7 @@ export interface McpPackageResult {
   antigravityConfig: Record<string, unknown>;
   registryManifest: Record<string, unknown>;
   writtenFiles: string[];
+  securityReport?: McpSecurityAuditReport;
 }
 
 export interface PremiumPackDefinition {

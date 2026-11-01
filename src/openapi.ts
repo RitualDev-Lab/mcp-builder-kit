@@ -184,6 +184,10 @@ export class OpenApiToMcpConverter {
         const contentTypes = requestBody?.content ? Object.keys(requestBody.content) : [];
 
         // Check for supported structured content types: application/json, multipart/form-data, application/x-www-form-urlencoded
+        const isMultipart = Boolean(requestBody?.content?.["multipart/form-data"]);
+        const isUrlEncoded = Boolean(
+          requestBody?.content?.["application/x-www-form-urlencoded"],
+        );
         const bodyContent =
           requestBody?.content?.["application/json"] ||
           requestBody?.content?.["multipart/form-data"] ||
@@ -214,11 +218,42 @@ export class OpenApiToMcpConverter {
               }
               seenParamNames.set(argName, "body");
 
+              // Handle OpenAPI 3.1 anyOf / oneOf on individual properties
+              let paramOneOf: ToolParameter[] | undefined;
+              let paramAnyOf: ToolParameter[] | undefined;
+              if (Array.isArray(propSchema.oneOf)) {
+                paramOneOf = (propSchema.oneOf as Array<Record<string, unknown>>).map(
+                  (sub, idx) => ({
+                    name: `${argName}_alt${idx}`,
+                    type: OpenApiToMcpConverter.normalizeType(sub?.type),
+                  }),
+                );
+              }
+              if (Array.isArray(propSchema.anyOf)) {
+                paramAnyOf = (propSchema.anyOf as Array<Record<string, unknown>>).map(
+                  (sub, idx) => ({
+                    name: `${argName}_alt${idx}`,
+                    type: OpenApiToMcpConverter.normalizeType(sub?.type),
+                  }),
+                );
+              }
+
+              const isBinary =
+                propSchema.format === "binary" ||
+                propSchema.format === "byte" ||
+                (isMultipart && propName.toLowerCase().includes("file"));
+
               parameters.push({
                 name: argName,
                 type: OpenApiToMcpConverter.normalizeType(propSchema.type as string),
-                description: (propSchema.description as string) || "Body field",
+                description:
+                  (propSchema.description as string) ||
+                  (isBinary ? "File upload payload" : "Body field"),
                 required: requiredSet.has(propName),
+                format: typeof propSchema.format === "string" ? propSchema.format : undefined,
+                isFileUpload: isBinary,
+                ...(paramOneOf ? { oneOf: paramOneOf } : {}),
+                ...(paramAnyOf ? { anyOf: paramAnyOf } : {}),
               });
             }
           }
@@ -240,6 +275,12 @@ export class OpenApiToMcpConverter {
             queryParams,
             headerParams,
             hasBody,
+            isMultipart,
+            contentType: isMultipart
+              ? "multipart/form-data"
+              : isUrlEncoded
+                ? "application/x-www-form-urlencoded"
+                : "application/json",
             baseUrlVar: "BASE_URL",
             ...(authHeader ? { authHeader } : {}),
             ...(Object.keys(wireParamMap).length > 0 ? { wireParamMap } : {}),
@@ -338,7 +379,7 @@ export class OpenApiToMcpConverter {
           const resolvedSub = OpenApiToMcpConverter.resolveSchema(
             sub as Record<string, unknown>,
             rootSpec,
-            visited,
+            new Set(visited),
           );
           if (resolvedSub && typeof resolvedSub === "object") {
             if (resolvedSub.properties && typeof resolvedSub.properties === "object") {
@@ -346,6 +387,58 @@ export class OpenApiToMcpConverter {
             }
             if (Array.isArray(resolvedSub.required)) {
               (merged.required as string[]).push(...(resolvedSub.required as string[]));
+            }
+          }
+        }
+      }
+      return merged;
+    }
+
+    // 3. Resolve oneOf composition (OpenAPI 3.1)
+    if (Array.isArray(schema.oneOf)) {
+      const merged: Record<string, unknown> = {
+        type: "object",
+        properties: {},
+        required: [],
+        oneOf: [],
+      };
+      for (const sub of schema.oneOf) {
+        if (sub && typeof sub === "object") {
+          const resolvedSub = OpenApiToMcpConverter.resolveSchema(
+            sub as Record<string, unknown>,
+            rootSpec,
+            new Set(visited),
+          );
+          if (resolvedSub && typeof resolvedSub === "object") {
+            (merged.oneOf as Record<string, unknown>[]).push(resolvedSub);
+            if (resolvedSub.properties && typeof resolvedSub.properties === "object") {
+              Object.assign(merged.properties as Record<string, unknown>, resolvedSub.properties);
+            }
+          }
+        }
+      }
+      return merged;
+    }
+
+    // 4. Resolve anyOf composition (OpenAPI 3.1)
+    if (Array.isArray(schema.anyOf)) {
+      const merged: Record<string, unknown> = {
+        type: "object",
+        properties: {},
+        required: [],
+        anyOf: [],
+      };
+      for (const sub of schema.anyOf) {
+        if (sub && typeof sub === "object") {
+          const resolvedSub = OpenApiToMcpConverter.resolveSchema(
+            sub as Record<string, unknown>,
+            rootSpec,
+            new Set(visited),
+          );
+          if (resolvedSub && typeof resolvedSub === "object") {
+            (merged.anyOf as Record<string, unknown>[]).push(resolvedSub);
+            if (resolvedSub.properties && typeof resolvedSub.properties === "object") {
+              Object.assign(merged.properties as Record<string, unknown>, resolvedSub.properties);
             }
           }
         }
@@ -368,8 +461,16 @@ export class OpenApiToMcpConverter {
     return `${method.toLowerCase()}_${cleanPath}`;
   }
 
-  private static normalizeType(type?: string): ToolParamType {
+  private static normalizeType(type?: unknown): ToolParamType {
     if (!type) return "string";
+    if (Array.isArray(type)) {
+      const nonNull = type.filter((t) => typeof t === "string" && t.toLowerCase() !== "null");
+      if (nonNull.length > 0) {
+        return OpenApiToMcpConverter.normalizeType(nonNull[0]);
+      }
+      return "string";
+    }
+    if (typeof type !== "string") return "string";
     const lower = type.toLowerCase();
     if (lower === "integer" || lower === "float" || lower === "number") return "number";
     if (lower === "boolean") return "boolean";

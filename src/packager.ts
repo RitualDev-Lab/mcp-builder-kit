@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { McpPackageOptions, McpPackageResult } from "./types.js";
+import { AgentShieldMcpAuditor } from "./security.js";
+import type { McpPackageOptions, McpPackageResult, McpSecurityAuditReport } from "./types.js";
 
 /**
  * 1-Click Multi-Target Packager & Dockerizer for Model Context Protocol servers
@@ -97,6 +98,21 @@ export class McpServerPackager {
     writeFileSync(claudePath, JSON.stringify(claudeDesktopConfig, null, 2), "utf8");
     writtenFiles.push("claude_desktop_config.json");
 
+    // 4. Built-in Security Pre-Flight Audit (AgentShield integration)
+    let securityReport: McpSecurityAuditReport | undefined;
+    if (!options.skipSecurityPreflight) {
+      securityReport = AgentShieldMcpAuditor.auditDirectory(targetDir);
+      if (securityReport.summary.critical > 0) {
+        const critDesc = securityReport.findings
+          .filter((f) => f.severity === "critical")
+          .map((f) => `[${f.id}] ${f.file}:${f.line ?? 0} - ${f.description}`)
+          .join("\n");
+        throw new Error(
+          `AgentShield Security Pre-Flight Failed: Critical vulnerabilities found in MCP server source:\n${critDesc}\n\nResolve the security hazards before packaging, or pass skipSecurityPreflight: true to bypass.`,
+        );
+      }
+    }
+
     return {
       dockerfile,
       claudeDesktopConfig,
@@ -104,6 +120,7 @@ export class McpServerPackager {
       antigravityConfig,
       registryManifest,
       writtenFiles,
+      ...(securityReport ? { securityReport } : {}),
     };
   }
 
