@@ -870,7 +870,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
   // 12. mcp-builder deploy
   if (command === "deploy") {
-    let target: any = "cloudflare-workers";
+    let target: import("./deployer.js").DeployTarget = "cloudflare-workers";
     let targetDir = process.cwd();
     let port = 8080;
     const validTargets = [
@@ -970,13 +970,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     const summary = await runMockSandboxTest(tools);
 
     console.log(
-      `\n┌──────────────────────────────────────────────────────────────┐\n` +
-        `│ 🧪 Mock Sandbox Fixture Verification Results:                 │\n` +
-        `│   Total Tools Tested:   ${String(summary.totalTools).padEnd(36)} │\n` +
-        `│   Passed:               ${String(summary.passed).padEnd(36)} │\n` +
-        `│   Failed:               ${String(summary.failed).padEnd(36)} │\n` +
-        `│   Average Latency:      ${`${summary.avgLatencyMs}ms`.padEnd(36)} │\n` +
-        `└──────────────────────────────────────────────────────────────┘`,
+      `\n┌──────────────────────────────────────────────────────────────┐\n│ 🧪 Mock Sandbox Fixture Verification Results:                 │\n│   Total Tools Tested:   ${String(summary.totalTools).padEnd(36)} │\n│   Passed:               ${String(summary.passed).padEnd(36)} │\n│   Failed:               ${String(summary.failed).padEnd(36)} │\n│   Average Latency:      ${`${summary.avgLatencyMs}ms`.padEnd(36)} │\n└──────────────────────────────────────────────────────────────┘`,
     );
 
     for (const r of summary.results) {
@@ -1016,7 +1010,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     console.log(`\n🚀 DevShelf Catalog Export Ready for '${serverName}':`);
     console.log(`   + Catalog JSON: ${result.filePath}`);
     console.log(`   + Submission:   ${resolve(targetDir, ".devshelf-submission.md")}`);
-    console.log(`\n👉 Submit 1-Click PR / Issue to DevShelf Directory:`);
+    console.log("\n👉 Submit 1-Click PR / Issue to DevShelf Directory:");
     console.log(`   ${result.submissionUrl}\n`);
     return;
   }

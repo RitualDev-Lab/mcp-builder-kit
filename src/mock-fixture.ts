@@ -178,7 +178,7 @@ export function generateMockToolResponse(
     timestamp: new Date().toISOString(),
     receivedArgs: args,
     result: {
-      id: "mock_res_" + Math.random().toString(36).substring(2, 9),
+      id: `mock_res_${Math.random().toString(36).substring(2, 9)}`,
       message: `Simulated mock response for ${tool.name}`,
       items: [
         { id: 1, title: `${tool.name} sample item 1`, status: "verified" },

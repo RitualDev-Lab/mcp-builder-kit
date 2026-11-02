@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe, after } from "node:test";
+import { McpVisualInspectorServer } from "../src/dashboard.js";
 import { McpCodeGenerator } from "../src/generator.js";
 import { OpenApiToMcpConverter } from "../src/openapi.js";
-import { McpVisualInspectorServer } from "../src/dashboard.js";
+import { McpServerPackager } from "../src/packager.js";
 import { EnterprisePackManager, PREMIUM_MCP_PACKS } from "../src/packs.js";
 import { AgentShieldMcpAuditor } from "../src/security.js";
-import { McpServerPackager } from "../src/packager.js";
 import type { ToolDefinition } from "../src/types.js";
 
 describe("Roadmap Upgrades Suite: OpenAPI 3.1, Runtime Auth, Testing Studio UI, Enterprise Packs & Security Pre-Flight", () => {

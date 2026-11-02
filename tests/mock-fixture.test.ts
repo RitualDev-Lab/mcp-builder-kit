@@ -89,6 +89,9 @@ describe("Mock Sandbox Fixture Mode Suite", () => {
     assert.ok(fixtures.getUserProfile);
     assert.ok(fixtures.createPaymentIntent);
     assert.ok(fixtures.getUserProfile.mockArgs.userId);
-    assert.strictEqual((fixtures.getUserProfile.expectedOutput as any)._mockFixture, true);
+    assert.strictEqual(
+      (fixtures.getUserProfile.expectedOutput as Record<string, unknown>)._mockFixture,
+      true,
+    );
   });
 });

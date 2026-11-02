@@ -98,7 +98,7 @@ describe("One-Click Cloud Deployment Recipes Suite", () => {
     assert.throws(
       () => {
         McpServerDeployer.generateDeployment({
-          target: "unknown-platform" as any,
+          target: "unknown-platform" as unknown as import("../src/deployer.js").DeployTarget,
           outputDir: tmpBase,
         });
       },
