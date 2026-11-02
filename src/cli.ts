@@ -888,7 +888,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       if (arg === "--target" && args[i + 1]) {
         const tVal = args[i + 1].toLowerCase();
         if (validTargets.includes(tVal)) {
-          target = tVal;
+          target = tVal as import("./deployer.js").DeployTarget;
         } else {
           console.error(
             `❌ Error: Invalid target '${args[i + 1]}'. Choose one of: ${validTargets.join(", ")}.`,
