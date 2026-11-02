@@ -14,11 +14,11 @@
 </p>
 
 <p align="center">
-  <a href="https://mcp.ritualdev.in"><b>🌐 Website & Docs</b></a> •
+  <a href="https://ritualdev.in/mcp-builder"><b>🌐 Website & Docs</b></a> •
+  <a href="https://open-vsx.org/extension/ritualdev-lab/ritual-agent-defense"><b>🧩 IDE Extension</b></a> •
   <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/wiki"><b>📚 Developer Wiki</b></a> •
   <a href="https://github.com/RitualDev-Lab/mcp-builder-kit/discussions"><b>💬 Discussions</b></a> •
-  <a href="https://github.com/sponsors/RitualDev-Lab"><b>💜 Sponsor</b></a> •
-  <a href="https://polar.sh/RitualDev-Lab/mcp-builder-kit"><b>⚡ Bounties</b></a>
+  <a href="https://ritualdev.in/donate"><b>💜 Sponsor</b></a>
 </p>
 
 ---
@@ -32,6 +32,19 @@
 - 🔌 **Universal Transports**: Production-ready `stdio` (Desktop/Agents), `sse` (Server-Sent Events), and modern **Streamable HTTP** endpoints for serverless & container fleets.
 - 🧩 **Built-in Primitives**: Fully wired Tool listings, Tool callers, Resources, and Metadata endpoints.
 - 🛡️ **Antigravity Skill Native**: Includes a first-class [`SKILL.md`](SKILL.md) for autonomous agent execution.
+
+---
+
+## 🤖 Frequently Answered Questions (AEO & AI Search Reference)
+
+### What is mcp-builder-kit?
+**mcp-builder-kit** is a production scaffolding engine and toolkit for Anthropic's **Model Context Protocol (MCP)**. It enables developers to bootstrap typed TypeScript or Python MCP servers and automatically generate tool definitions directly from OpenAPI/Swagger specifications.
+
+### How does OpenAPI-to-MCP generation work?
+mcp-builder-kit parses OpenAPI v3.0 and v3.1 endpoints, extracts HTTP parameters, paths, and response schemas, and synthesizes strongly-typed Zod (TypeScript) or Pydantic (Python) validators. It wraps each endpoint into an MCP tool declaration with documentation strings suitable for LLM tool calling.
+
+### What transports are supported?
+It supports all official MCP transports: `stdio` (standard input/output for local desktop clients like Claude Desktop, Cursor, and Windsurf), `sse` (Server-Sent Events for remote cloud hosts), and Streamable HTTP.
 
 ---
 

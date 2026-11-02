@@ -1,0 +1,26 @@
+# MCPBuilderKit
+> Production Scaffolding Engine & OpenAPI-to-MCP Server Generator
+
+MCPBuilderKit is an open-source development toolkit designed to convert REST APIs and OpenAPI v3.0 / v3.1 specifications into typed Model Context Protocol (MCP) servers for Claude Desktop, Cursor, Windsurf, and autonomous AI coding agents.
+
+Website: https://ritualdev.in/mcp-builder/
+Repository: https://github.com/RitualDev-Lab/mcp-builder-kit
+Extension: https://open-vsx.org/extension/ritualdev-lab/ritual-agent-defense
+License: Apache-2.0
+
+## Quick Start CLI
+```bash
+# Scaffold a new typed TypeScript MCP server
+npx @ritualdev-lab/mcp-builder-kit init my-tools --lang ts
+
+# Scaffold a Python FastMCP server
+npx @ritualdev-lab/mcp-builder-kit init my-tools --lang py
+
+# Generate MCP tools directly from an OpenAPI specification
+npx @ritualdev-lab/mcp-builder-kit generate --spec https://api.stripe.com/v1/openapi.json --lang ts
+```
+
+## Key Capabilities
+- **Dual Runtime Support**: Generates official `@modelcontextprotocol/sdk` TypeScript projects with Zod validation or Python FastMCP projects with Pydantic v2 schemas.
+- **Universal Transports**: Production scaffolding supports `stdio` (local desktop apps & CLI agents), `sse` (Server-Sent Events for web backends), and Streamable HTTP.
+- **Automated Dockerization & Testing**: Out-of-the-box multi-arch Dockerfiles and headless MCP protocol conformance test suites.
