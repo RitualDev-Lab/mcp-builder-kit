@@ -23,7 +23,8 @@
     "url": "https://github.com/RitualDev-Lab/mcp-builder-kit/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsup",
