@@ -6,6 +6,7 @@ export interface McpScaffoldOptions {
   targetDir: string;
   language?: McpLanguage;
   transport?: McpTransport;
+  template?: "default" | "enterprise-rag" | "k8s-ops-agent" | "financial-ledger";
   description?: string;
   author?: string;
   includeAgentShield?: boolean;
