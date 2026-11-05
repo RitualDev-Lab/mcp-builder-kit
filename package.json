@@ -56,7 +56,7 @@
   "author": "RitualDev Lab (https://github.com/RitualDev-Lab)",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.6.4",
     "@types/node": "^22.10.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
