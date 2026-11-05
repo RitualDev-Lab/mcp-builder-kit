@@ -4,13 +4,18 @@
   "description": "Production Toolkit & Scaffolding Engine for Model Context Protocol (MCP) Servers",
   "type": "module",
   "bin": {
-    "mcp-builder-kit": "./dist/cli.js",
-    "mcp-builder": "./dist/cli.js",
-    "mcp-kit": "./dist/cli.js"
+    "mcp-builder-kit": "dist/cli.js",
+    "mcp-builder": "dist/cli.js",
+    "mcp-kit": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md", "LICENSE", "SKILL.md"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SKILL.md"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
@@ -31,7 +36,7 @@
     "dev": "tsup --watch",
     "test": "tsx --test",
     "benchmark": "tsx src/cli.ts benchmark",
-    "prepublishOnly": "pnpm run build && pnpm test && npm pack --dry-run",
+    "prepublishOnly": "npm run build && npm test && npm pack --dry-run",
     "lint": "biome lint .",
     "format": "biome format --write ."
   },
@@ -52,10 +57,10 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.10.1",
-    "tsup": "^8.3.5",
+    "@types/node": "^26.6.6",
+    "tsup": "^9.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
+    "typescript": "^7.0.2",
     "zod": "^4.6.7"
   }
 }

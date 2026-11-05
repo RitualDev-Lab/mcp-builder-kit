@@ -1,4 +1,5 @@
-name: Publish Package
+name: Publish Package & Sigstore Provenance
+
 on:
   release:
     types: [published]
@@ -24,38 +25,33 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@ritualdev-lab"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci || npm install
 
       - name: Run Tests
-        run: pnpm test
+        run: npm test
 
-      - name: Build Bundles
-        run: pnpm run build
+      - name: Build mcp-builder-kit
+        run: npm run build
 
       - name: Publish to GitHub Packages
         continue-on-error: true
         run: |
-          node -e "const pkg = require('./package.json'); pkg.name = '@ritualdev-lab/mcp-builder-kit'; pkg.publishConfig = { registry: 'https://npm.pkg.github.com' }; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');"
           echo "@ritualdev-lab:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
-          npm publish
+          npm publish --provenance=false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
-    name: Publish to npm Registry
+    name: Publish to npm with Sigstore SLSA Provenance
     runs-on: ubuntu-latest
     if: github.repository == 'RitualDev-Lab/mcp-builder-kit'
     permissions:
       contents: read
       id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -65,19 +61,21 @@ jobs:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci || npm install
 
-      - name: Build Bundles
-        run: pnpm run build
+      - name: Run Test Suite
+        run: npm test
 
-      - name: Publish to npm
-        continue-on-error: true
-        run: npm publish --access public
+      - name: Build mcp-builder-kit
+        run: npm run build
+
+      - name: Generate SLSA Build Provenance Attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'dist/**'
+
+      - name: Publish to npm with Sigstore Provenance
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
