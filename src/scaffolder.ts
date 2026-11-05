@@ -1,5 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { generateEnterpriseRagTemplate } from "./templates/enterprise-rag.js";
+import { generateFinancialLedgerTemplate } from "./templates/financial-ledger.js";
+import { generateK8sOpsAgentTemplate } from "./templates/k8s-ops-agent.js";
 import { generatePythonTemplate } from "./templates/python.js";
 import { generateTypeScriptTemplate } from "./templates/typescript.js";
 import type { GeneratedFile, McpScaffoldOptions, ScaffoldResult } from "./types.js";
@@ -16,7 +19,13 @@ export class McpProjectScaffolder {
     const force = Boolean(options.force);
 
     let files: GeneratedFile[] = [];
-    if (language === "typescript") {
+    if (options.template === "enterprise-rag") {
+      files = generateEnterpriseRagTemplate(options);
+    } else if (options.template === "k8s-ops-agent") {
+      files = generateK8sOpsAgentTemplate(options);
+    } else if (options.template === "financial-ledger") {
+      files = generateFinancialLedgerTemplate(options);
+    } else if (language === "typescript") {
       files = generateTypeScriptTemplate(options);
     } else if (language === "python") {
       files = generatePythonTemplate(options);

@@ -205,6 +205,63 @@ export const PREMIUM_MCP_PACKS: Record<string, PremiumPackDefinition> = {
       "redis_flush_keys_by_pattern",
     ],
   },
+  "enterprise-rag-pack": {
+    id: "pdt_mcp_enterprise_rag",
+    name: "Enterprise RAG & Hybrid Vector Retrieval Scaffolder Kit",
+    category: "database",
+    priceUsd: 149,
+    type: "one_time",
+    description:
+      "Production enterprise RAG template with sliding-window chunking, dense/sparse BM25 hybrid ranking, and cryptographic citation provenance.",
+    checkoutUrl:
+      "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=enterprise_rag",
+    features: [
+      "Hybrid vector and sparse lexical (BM25) search with Reciprocal Rank Fusion",
+      "Sliding window chunking preserving paragraph boundaries and zero context loss",
+      "Cryptographic citation preservation (source URL, offset, page provenance)",
+      "Air-gapped ready with zero cloud embedding dependencies",
+    ],
+    sampleTools: ["rag_ingest_document", "rag_hybrid_query", "rag_verify_citation"],
+  },
+  "k8s-ops-agent-pack": {
+    id: "pdt_mcp_k8s_ops",
+    name: "Air-Gapped Kubernetes Ops Agent Scaffolder Kit",
+    category: "devops",
+    priceUsd: 199,
+    type: "one_time",
+    description:
+      "Enterprise in-cluster Kubernetes operations agent with non-bypassable cordon/drain safety rails, kubectl dry-run simulation, and RBAC confinement.",
+    checkoutUrl: "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=k8s_ops",
+    features: [
+      "In-cluster Pod lifecycle management and diagnostic log streaming",
+      "Control-plane protection blocking cordon/drain on master nodes or system namespaces",
+      "Dry-run kubectl admission simulation before mutating cluster resources",
+      "Air-gapped operation with AGENTSHIELD_AIR_GAPPED=1 compliance",
+    ],
+    sampleTools: ["k8s_list_pods", "k8s_cordon_and_drain_node", "k8s_simulate_kubectl"],
+  },
+  "financial-ledger-pack": {
+    id: "pdt_mcp_financial_ledger",
+    name: "Double-Entry Financial Ledger Connector Kit",
+    category: "payments",
+    priceUsd: 249,
+    type: "one_time",
+    description:
+      "High-assurance double-entry bookkeeping engine with SHA-256 idempotent transaction hashing, append-only hash chains, and integer cent precision.",
+    checkoutUrl:
+      "https://checkout.dodopayments.com/buy/pdt_0NpjONEJnu5OcWhncWF68?pack=financial_ledger",
+    features: [
+      "Strict double-entry bookkeeping invariant: total debits equal total credits",
+      "Cryptographic SHA-256 idempotency key deduplication preventing duplicate postings",
+      "Append-only immutable transaction ledger with cryptographic hash chaining",
+      "Multi-currency support with integer cent decimal precision",
+    ],
+    sampleTools: [
+      "ledger_post_transaction",
+      "ledger_get_account_balance",
+      "ledger_verify_audit_trail",
+    ],
+  },
 };
 
 /**
