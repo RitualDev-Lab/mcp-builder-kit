@@ -60,105 +60,109 @@ export function detectSchemaType(content: string): "openapi" | "graphql" | "prot
  */
 export function parseGraphQLSchema(sdlContent: string): ParsedGraphQLField[] {
   const operations: ParsedGraphQLField[] = [];
+  const lines = sdlContent.split(/\r?\n/);
 
-  // Match Query or Mutation blocks
-  const typeBlockRegex = /type\s+(Query|Mutation)\s*\{([^}]*)\}/gi;
-  let typeMatch = typeBlockRegex.exec(sdlContent);
+  let currentOpType: "query" | "mutation" | null = null;
+  let inDocstring = false;
+  let pendingDocLines: string[] = [];
 
-  while (typeMatch !== null) {
-    const opType = typeMatch[1].toLowerCase() as "query" | "mutation";
-    const body = typeMatch[2];
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
 
-    // Match individual field definitions e.g.:
-    // # Get a user by ID
-    // getUser(id: ID!, limit: Int): User
-    const lines = body.split("\n");
-    let inDocstring = false;
-    let pendingDocLines: string[] = [];
-
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line) continue;
-
-      if (line.startsWith('"""')) {
-        if (inDocstring) {
-          inDocstring = false;
-          continue;
-        }
-        if (line.endsWith('"""') && line.length > 3) {
-          pendingDocLines = [line.slice(3, -3).trim()];
-          continue;
-        }
-        inDocstring = true;
-        const rest = line.slice(3).trim();
-        if (rest) pendingDocLines.push(rest);
-        continue;
-      }
-
-      if (inDocstring) {
-        if (line.endsWith('"""')) {
-          inDocstring = false;
-          const content = line.slice(0, -3).trim();
-          if (content) pendingDocLines.push(content);
-        } else {
-          pendingDocLines.push(line);
-        }
-        continue;
-      }
-
-      if (line.startsWith("#")) {
-        pendingDocLines.push(line.replace(/^#+\s*/, "").trim());
-        continue;
-      }
-
-      const pendingDoc = pendingDocLines.join(" ").trim();
-
-      const fieldMatch = line.match(/^([a-zA-Z0-9_]+)(?:\(([^)]*)\))?\s*:\s*([a-zA-Z0-9_!\[\]]+)/);
-      if (fieldMatch) {
-        const fieldName = fieldMatch[1];
-        const rawArgs = fieldMatch[2] || "";
-        const returnType = fieldMatch[3];
-
-        const args: ToolParameter[] = [];
-        if (rawArgs.trim()) {
-          const argList = rawArgs.split(",");
-          for (const rawArg of argList) {
-            const parts = rawArg.trim().split(":");
-            if (parts.length === 2) {
-              const argName = parts[0].trim();
-              const argTypeRaw = parts[1].trim();
-              const isRequired = argTypeRaw.includes("!");
-              const cleanType = argTypeRaw.replace(/[!\[\]]/g, "").toLowerCase();
-
-              let mappedType: ToolParameter["type"] = "string";
-              if (cleanType === "int" || cleanType === "float") mappedType = "number";
-              else if (cleanType === "boolean") mappedType = "boolean";
-              else if (argTypeRaw.includes("[") && argTypeRaw.includes("]")) mappedType = "array";
-              else if (cleanType !== "string" && cleanType !== "id") mappedType = "object";
-
-              args.push({
-                name: argName,
-                type: mappedType,
-                description: `GraphQL parameter (${argTypeRaw})`,
-                required: isRequired,
-              });
-            }
-          }
-        }
-
-        operations.push({
-          name: fieldName,
-          operationType: opType,
-          description: pendingDoc || `GraphQL ${opType}: ${fieldName}`,
-          args,
-          returnType,
-        });
-
+    if (currentOpType === null) {
+      const typeStartMatch = line.match(/^type\s+(Query|Mutation)\b/i);
+      if (typeStartMatch) {
+        currentOpType = typeStartMatch[1].toLowerCase() as "query" | "mutation";
+        inDocstring = false;
         pendingDocLines = [];
       }
+      continue;
     }
 
-    typeMatch = typeBlockRegex.exec(sdlContent);
+    if (line === "}" || line.startsWith("}")) {
+      currentOpType = null;
+      inDocstring = false;
+      pendingDocLines = [];
+      continue;
+    }
+
+    if (line.startsWith('"""')) {
+      if (inDocstring) {
+        inDocstring = false;
+        continue;
+      }
+      if (line.endsWith('"""') && line.length > 3) {
+        pendingDocLines = [line.slice(3, -3).trim()];
+        continue;
+      }
+      inDocstring = true;
+      const rest = line.slice(3).trim();
+      if (rest) pendingDocLines.push(rest);
+      continue;
+    }
+
+    if (inDocstring) {
+      if (line.endsWith('"""')) {
+        inDocstring = false;
+        const content = line.slice(0, -3).trim();
+        if (content) pendingDocLines.push(content);
+      } else {
+        pendingDocLines.push(line);
+      }
+      continue;
+    }
+
+    if (line.startsWith("#")) {
+      pendingDocLines.push(line.replace(/^#+\s*/, "").trim());
+      continue;
+    }
+
+    const pendingDoc = pendingDocLines.join(" ").trim();
+
+    const fieldMatch = line.match(/^([a-zA-Z0-9_]+)(?:\(([^)]*)\))?\s*:\s*([a-zA-Z0-9_!\[\]]+)/);
+    if (fieldMatch) {
+      const fieldName = fieldMatch[1];
+      const rawArgs = fieldMatch[2] || "";
+      const returnType = fieldMatch[3];
+
+      const args: ToolParameter[] = [];
+      if (rawArgs.trim()) {
+        const argList = rawArgs.split(",");
+        for (const rawArg of argList) {
+          const parts = rawArg.trim().split(":");
+          if (parts.length === 2) {
+            const argName = parts[0].trim();
+            const argTypeRaw = parts[1].trim();
+            const isRequired = argTypeRaw.includes("!");
+            const cleanType = argTypeRaw.replace(/[!\[\]]/g, "").toLowerCase();
+
+            let mappedType: ToolParameter["type"] = "string";
+            if (cleanType === "int" || cleanType === "float") mappedType = "number";
+            else if (cleanType === "boolean") mappedType = "boolean";
+            else if (argTypeRaw.includes("[") && argTypeRaw.includes("]")) mappedType = "array";
+            else if (cleanType !== "string" && cleanType !== "id") mappedType = "object";
+
+            args.push({
+              name: argName,
+              type: mappedType,
+              description: `GraphQL parameter (${argTypeRaw})`,
+              required: isRequired,
+            });
+          }
+        }
+      }
+
+      operations.push({
+        name: fieldName,
+        operationType: currentOpType,
+        description: pendingDoc || `GraphQL ${currentOpType}: ${fieldName}`,
+        args,
+        returnType,
+      });
+
+      pendingDocLines = [];
+    }
   }
 
   return operations;
@@ -221,24 +225,28 @@ export function convertGraphQLToTools(
  */
 export function parseProtobufDefinition(protoContent: string): ParsedProtoRpc[] {
   const rpcs: ParsedProtoRpc[] = [];
-
-  // 1. Extract message fields mapping
   const messages = new Map<string, ToolParameter[]>();
-  const messageRegex = /message\s+([a-zA-Z0-9_]+)\s*\{([^}]*)\}/gi;
-  let msgMatch = messageRegex.exec(protoContent);
+  const lines = protoContent.split(/\r?\n/);
 
-  while (msgMatch !== null) {
-    const msgName = msgMatch[1];
-    const msgBody = msgMatch[2];
-    const fields: ToolParameter[] = [];
+  let currentMsgName: string | null = null;
+  let currentMsgFields: ToolParameter[] = [];
+  let currentServiceName: string | null = null;
 
-    const fieldLines = msgBody.split("\n");
-    for (const rawLine of fieldLines) {
-      const line = rawLine.replace(/\/\/.*$/, "").trim();
-      if (!line) continue;
+  for (const rawLine of lines) {
+    const commentIdx = rawLine.indexOf("//");
+    const stripped = commentIdx >= 0 ? rawLine.slice(0, commentIdx) : rawLine;
+    const line = stripped.trim();
+    if (!line) continue;
 
-      // e.g. "string user_id = 1;" or "repeated int32 limits = 2;"
-      const fieldPattern = /(?:(repeated)\s+)?([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\d+;/i;
+    if (currentMsgName !== null) {
+      if (line === "}" || line.startsWith("}")) {
+        messages.set(currentMsgName, currentMsgFields);
+        currentMsgName = null;
+        currentMsgFields = [];
+        continue;
+      }
+
+      const fieldPattern = /^(?:(repeated)\s+)?([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*=\s*\d+;/i;
       const match = line.match(fieldPattern);
       if (match) {
         const isRepeated = Boolean(match[1]);
@@ -267,50 +275,54 @@ export function parseProtobufDefinition(protoContent: string): ParsedProtoRpc[] 
           mappedType = "array";
         }
 
-        fields.push({
+        currentMsgFields.push({
           name: fieldName,
           type: mappedType,
           description: `Protobuf field ${protoType} tag`,
           required: false,
         });
       }
+      continue;
     }
 
-    messages.set(msgName, fields);
-    msgMatch = messageRegex.exec(protoContent);
-  }
+    if (currentServiceName !== null) {
+      if (line === "}" || line.startsWith("}")) {
+        currentServiceName = null;
+        continue;
+      }
 
-  // 2. Extract services and RPCs
-  const serviceRegex = /service\s+([a-zA-Z0-9_]+)\s*\{([^}]*)\}/gi;
-  let serviceMatch = serviceRegex.exec(protoContent);
+      const rpcMatch = line.match(
+        /^rpc\s+([a-zA-Z0-9_]+)\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*returns\s*\(\s*([a-zA-Z0-9_]+)\s*\);/i,
+      );
+      if (rpcMatch) {
+        const rpcName = rpcMatch[1];
+        const reqMsg = rpcMatch[2];
+        const respMsg = rpcMatch[3];
+        const fields = messages.get(reqMsg) || [];
 
-  while (serviceMatch !== null) {
-    const serviceName = serviceMatch[1];
-    const serviceBody = serviceMatch[2];
-
-    const rpcRegex =
-      /rpc\s+([a-zA-Z0-9_]+)\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*returns\s*\(\s*([a-zA-Z0-9_]+)\s*\);/gi;
-    let rpcMatch = rpcRegex.exec(serviceBody);
-
-    while (rpcMatch !== null) {
-      const rpcName = rpcMatch[1];
-      const reqMsg = rpcMatch[2];
-      const respMsg = rpcMatch[3];
-      const fields = messages.get(reqMsg) || [];
-
-      rpcs.push({
-        serviceName,
-        rpcName,
-        description: `gRPC unary call ${serviceName}.${rpcName}`,
-        requestMessage: reqMsg,
-        responseMessage: respMsg,
-        fields,
-      });
-
-      rpcMatch = rpcRegex.exec(serviceBody);
+        rpcs.push({
+          serviceName: currentServiceName,
+          rpcName,
+          description: `gRPC unary call ${currentServiceName}.${rpcName}`,
+          requestMessage: reqMsg,
+          responseMessage: respMsg,
+          fields,
+        });
+      }
+      continue;
     }
 
-    serviceMatch = serviceRegex.exec(protoContent);
+    const msgStartMatch = line.match(/^message\s+([a-zA-Z0-9_]+)\b/i);
+    if (msgStartMatch) {
+      currentMsgName = msgStartMatch[1];
+      currentMsgFields = [];
+      continue;
+    }
+
+    const svcStartMatch = line.match(/^service\s+([a-zA-Z0-9_]+)\b/i);
+    if (svcStartMatch) {
+      currentServiceName = svcStartMatch[1];
+    }
   }
 
   return rpcs;

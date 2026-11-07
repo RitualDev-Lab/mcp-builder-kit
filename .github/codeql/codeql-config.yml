@@ -1,0 +1,8 @@
+name: "CodeQL Analysis Configuration"
+
+paths:
+  - src
+
+paths-ignore:
+  - tests
+  - docs
