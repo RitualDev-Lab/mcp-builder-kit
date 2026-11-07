@@ -451,11 +451,16 @@ export class OpenApiToMcpConverter {
     if (operationId) {
       return operationId.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
     }
-    const cleanPath = path
-      .replace(/\{([^}]+)\}/g, "by_$1")
+    let cleanPath = path
+      .replace(/\{([a-zA-Z0-9_]+)\}/g, "by_$1")
       .replace(/[^a-zA-Z0-9]/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_|_$/g, "");
+      .replace(/_+/g, "_");
+    while (cleanPath.startsWith("_")) {
+      cleanPath = cleanPath.slice(1);
+    }
+    while (cleanPath.endsWith("_")) {
+      cleanPath = cleanPath.slice(0, -1);
+    }
     return `${method.toLowerCase()}_${cleanPath}`;
   }
 

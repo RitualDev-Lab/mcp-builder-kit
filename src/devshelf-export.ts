@@ -58,6 +58,11 @@ export class DevShelfExporter {
     const customTags = (options.tags || []).filter((t) => !baseTags.includes(t));
     const statusTags = [...baseTags, ...customTags].slice(0, 6);
 
+    let cleanRepo = repo;
+    while (cleanRepo.endsWith("/")) {
+      cleanRepo = cleanRepo.slice(0, -1);
+    }
+
     return {
       name,
       repo,
@@ -68,7 +73,7 @@ export class DevShelfExporter {
       language: options.language || "TypeScript / Node.js",
       license: options.license || "Apache-2.0",
       featured: false,
-      goodFirstIssues: `${repo.replace(/\/+$/, "")}/issues`,
+      goodFirstIssues: `${cleanRepo}/issues`,
       statusTags,
     };
   }

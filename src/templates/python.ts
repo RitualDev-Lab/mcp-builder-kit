@@ -2,7 +2,13 @@ import { escapePythonDocstring } from "../generator.js";
 import type { GeneratedFile, McpScaffoldOptions } from "../types.js";
 
 export function toSafePythonPackageName(name: string): string {
-  let pkg = name.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/^_+|_+$/g, "");
+  let pkg = name.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  while (pkg.startsWith("_")) {
+    pkg = pkg.slice(1);
+  }
+  while (pkg.endsWith("_")) {
+    pkg = pkg.slice(0, -1);
+  }
   if (!pkg) {
     pkg = "mcp_server";
   }
@@ -17,10 +23,12 @@ export function generatePythonTemplate(options: McpScaffoldOptions): GeneratedFi
   const description = options.description || "High-performance FastMCP Server in Python";
   const author = options.author || "RitualDev Lab";
 
+  const safeDescription = description.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
   const pyprojectToml = `[project]
 name = "${name}"
 version = "0.1.0"
-description = "${description.replace(/"/g, '\\"')}"
+description = "${safeDescription}"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
