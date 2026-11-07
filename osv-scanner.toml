@@ -1,0 +1,10 @@
+# OpenSSF OSV-Scanner Configuration for mcp-builder-kit
+# See: https://google.github.io/osv-scanner/configuration/
+
+[[IgnoredVulns]]
+id = "GHSA-g7r4-m6w7-qqqr"
+reason = "Dev dependency esbuild (bundled with tsup) is used exclusively during offline build/transpilation, not as a Windows development HTTP file server with servedir."
+
+[[IgnoredVulns]]
+id = "GHSA-mrhx-c7xc-m3w5"
+reason = "Zod unbounded error accumulation vulnerability is not applicable to local CLI scaffolding inputs where array schemas have bounded inputs."
