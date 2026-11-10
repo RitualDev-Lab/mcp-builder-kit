@@ -11,7 +11,7 @@ describe("Monetization: B2B Turnkey Custom MCP Development Suite", () => {
     assert.ok(starter);
     assert.equal(starter.priceUsd, 500);
     assert.ok(starter.depositCheckoutUrl.includes("checkout.dodopayments.com"));
-    assert.ok(starter.consultationUrl.includes("cal.com"));
+    assert.ok(starter.consultationUrl.includes("ritualdev.in/mcp-builder"));
 
     const pro = tiers.find((t) => t.id === "pro");
     assert.ok(pro);
@@ -38,7 +38,7 @@ describe("Monetization: B2B Turnkey Custom MCP Development Suite", () => {
     assert.equal(inquiry.clientName, "Acme Corp");
     assert.equal(inquiry.companyName, "Acme Autonomous AI");
     assert.ok(inquiry.depositCheckoutUrl.includes("deposit=750"));
-    assert.ok(inquiry.consultationUrl.includes("mcp-turnkey-pro"));
+    assert.ok(inquiry.consultationUrl.includes("ritualdev.in/mcp-builder"));
 
     assert.ok(inquiry.intakeSummaryMarkdown.includes("Acme Corp (Acme Autonomous AI)"));
     assert.ok(inquiry.intakeSummaryMarkdown.includes("Salesforce CRM, Google BigQuery"));
