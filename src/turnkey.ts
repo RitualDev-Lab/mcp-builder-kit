@@ -15,7 +15,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
       "Ideal for startups or internal teams needing 1-3 REST/OpenAPI tools or custom database integrations packaged into a production MCP server.",
     depositCheckoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=starter&deposit=250",
-    consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-starter",
+    consultationUrl: "https://ritualdev.in/mcp-builder?tier=pro",
     deliverables: [
       "1-3 Production Tools & Resources with Zod validation",
       "Headless Mock Inspector test suite with 100% protocol conformance",
@@ -34,7 +34,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
       "Engineered for complex workflows: multiple third-party APIs, OAuth2/AuthN handling, dynamic resource streaming, and custom LLM sanitization.",
     depositCheckoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=pro&deposit=750",
-    consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-pro",
+    consultationUrl: "https://ritualdev.in/mcp-builder?tier=pro",
     deliverables: [
       "Up to 10 Production Tools, Prompts & Live Streaming Resources",
       "Secure OAuth2/API Key credential management & token rotation",
@@ -54,7 +54,7 @@ export const TURNKEY_MCP_TIERS: TurnkeyPackageTier[] = [
       "Full-scale bespoke enterprise server: proprietary internal microservices, private VPC networking, RBAC, air-gapped on-prem isolation, and SLA guarantee.",
     depositCheckoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NpjOJVkkh7Mryrzm6ro9?tier=enterprise&deposit=1750",
-    consultationUrl: "https://cal.com/ritualdev/mcp-turnkey-enterprise",
+    consultationUrl: "https://ritualdev.in/enterprise",
     deliverables: [
       "Unlimited Tools, Resources, Prompts, and Dynamic Subscriptions",
       "Private VPC / On-Prem / Air-gapped deployment architecture",
@@ -121,7 +121,7 @@ export class TurnkeyMcpService {
       "1. **Reserve Project Slot & 50% Milestone Deposit:**",
       `   👉 [Pay Milestone Deposit via Dodo Payments](${tier.depositCheckoutUrl})`,
       "2. **Schedule 20-Min Architecture Discovery Call:**",
-      `   👉 [Book Architecture Call via Cal.com](${tier.consultationUrl})`,
+      `   👉 [Commission Project via RitualDev Portal](${tier.consultationUrl})`,
       "3. **Direct Inquiry Email:**",
       `   Contact \`team@ritualdev.in\` referencing **\`${inquiryId}\`**`,
     ].join("\n");
