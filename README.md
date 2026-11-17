@@ -268,3 +268,12 @@ mcp-builder-kit is 100% open-source and Apache-2.0 licensed. Your sponsorship di
 <sub>🔒 *Zero physical shipping required. Powered by Dodo Payments (Merchant of Record) with instant tax invoice and global payment methods (Cards, UPI, Apple Pay).*</sub>
 
 </div>
+
+---
+
+## 🛡️ Community & Governance
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [Accessibility Statement](ACCESSIBILITY.md)
+- [License](LICENSE)
