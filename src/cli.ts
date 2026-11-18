@@ -82,7 +82,8 @@ Commands:
 
 Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
-  --transport, -t          Transport: 'stdio' (default), 'sse', or 'both'
+  --transport, -t          Transport: 'stdio' (default), 'streamable-http', 'sse', or 'both'
+  --with-agentshield       Wrap generated MCP tool handlers in automatic AgentShield secret redaction middleware
   --dir, -d                Target output directory (defaults to ./<project-name>)
   --desc                   Short project description
   --author                 Project author name / organization
@@ -166,11 +167,19 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
             ? "python"
             : "typescript";
 
-        const ansTrans = await rl.question("? Transport [1: stdio (default), 2: sse, 3: both]: ");
+        const ansTrans = await rl.question(
+          "? Transport [1: stdio (default), 2: streamable-http, 3: sse, 4: both]: ",
+        );
         const transTrim = ansTrans.trim();
-        if (transTrim === "2" || transTrim.toLowerCase() === "sse") transport = "sse";
-        else if (transTrim === "3" || transTrim.toLowerCase() === "both") transport = "both";
-        else transport = "stdio";
+        if (transTrim === "2" || transTrim.toLowerCase() === "streamable-http") {
+          transport = "streamable-http";
+        } else if (transTrim === "3" || transTrim.toLowerCase() === "sse") {
+          transport = "sse";
+        } else if (transTrim === "4" || transTrim.toLowerCase() === "both") {
+          transport = "both";
+        } else {
+          transport = "stdio";
+        }
 
         const ansDesc = await rl.question("? Short description (optional): ");
         if (ansDesc.trim()) description = ansDesc.trim();
@@ -199,11 +208,16 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         i++;
       } else if ((arg === "--transport" || arg === "-t") && args[i + 1]) {
         const transVal = args[i + 1].toLowerCase();
-        if (transVal === "stdio" || transVal === "sse" || transVal === "both") {
+        if (
+          transVal === "stdio" ||
+          transVal === "streamable-http" ||
+          transVal === "sse" ||
+          transVal === "both"
+        ) {
           transport = transVal;
         } else {
           console.error(
-            `❌ Error: Invalid transport '${args[i + 1]}'. Choose 'stdio', 'sse', or 'both'.`,
+            `❌ Error: Invalid transport '${args[i + 1]}'. Choose 'stdio', 'streamable-http', 'sse', or 'both'.`,
           );
           process.exit(1);
         }
@@ -225,9 +239,13 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       }
     }
 
+    const includeAgentShield = args.includes("--with-agentshield");
     console.log(`\n📦 Scaffolding new MCP server: ${projectName}`);
-    console.log(`   • Language:  ${language}`);
-    console.log(`   • Transport: ${transport}`);
+    console.log(`   • Language:     ${language}`);
+    console.log(`   • Transport:    ${transport}`);
+    if (includeAgentShield) {
+      console.log("   • AgentShield:  enabled (automatic tool response secret redaction)");
+    }
     const force = args.includes("--force") || args.includes("-f");
 
     try {
@@ -238,6 +256,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         transport,
         description,
         author,
+        includeAgentShield,
         force,
       });
 

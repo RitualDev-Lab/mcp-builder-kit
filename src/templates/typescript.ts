@@ -6,6 +6,16 @@ export function generateTypeScriptTemplate(options: McpScaffoldOptions): Generat
   const description = options.description || "High-performance Model Context Protocol (MCP) server";
   const author = options.author || "RitualDev Lab";
   const transport = options.transport || "stdio";
+  const includeAgentShield = Boolean(options.includeAgentShield);
+  const usesStreamableHttp = transport === "streamable-http" || transport === "both";
+
+  const dependencies: Record<string, string> = {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    zod: "^3.24.2",
+  };
+  if (includeAgentShield) {
+    dependencies["@ritualdev-lab/agentshield"] = "^0.2.2";
+  }
 
   const packageJson = {
     name,
@@ -25,10 +35,7 @@ export function generateTypeScriptTemplate(options: McpScaffoldOptions): Generat
       lint: "biome lint .",
       format: "biome format --write .",
     },
-    dependencies: {
-      "@modelcontextprotocol/sdk": "^1.6.0",
-      zod: "^3.24.2",
-    },
+    dependencies,
     devDependencies: {
       "@biomejs/biome": "^1.9.4",
       "@types/node": "^22.10.1",
@@ -93,7 +100,60 @@ export default defineConfig({
 }
 `;
 
-  const indexTs = `import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+  const agentShieldImport = includeAgentShield
+    ? 'import { withAgentShieldRedaction } from "./agentshield-middleware.js";\n'
+    : "";
+  const streamableHttpImport = usesStreamableHttp
+    ? 'import { createServer, type IncomingMessage, type ServerResponse } from "node:http";\nimport { randomUUID } from "node:crypto";\n'
+    : "";
+
+  const agentShieldMiddlewareTs = `/**
+ * AgentShield Zero-Leak MCP Tool Response Middleware
+ * Automatically scans and redacts leaked credentials (OpenAI, Anthropic, AWS, GitHub,
+ * Stripe, PEM keys, DB URIs) from every MCP tool response before returning to the LLM context.
+ */
+
+const SECRET_PATTERNS: Array<{ id: string; rx: RegExp }> = [
+  { id: "OPENAI_KEY", rx: /\\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,160}\\b/g },
+  { id: "ANTHROPIC_KEY", rx: /\\bsk-ant-(?:api03|admin01)-[A-Za-z0-9_-]{20,120}\\b/g },
+  { id: "AWS_KEY", rx: /\\b(?:AKIA|ASIA|AIDA|AROA)[0-9A-Z]{16}\\b/g },
+  { id: "GITHUB_PAT", rx: /\\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,64}\\b/g },
+  { id: "STRIPE_KEY", rx: /\\b(?:sk|rk)_(?:live|test)_[0-9A-Za-z]{20,99}\\b/g },
+  { id: "DB_URI", rx: /\\b(?:postgres|postgresql|mysql|mongodb(?:\\+srv)?|rediss?):\\/\\/[^\\s:@"'\\\`]+:[^\\s@"'\\\`]+@[^\\s"'\\\`]+/g },
+  { id: "PEM_KEY", rx: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g },
+];
+
+export function redactSecrets(input: string): string {
+  let out = input;
+  for (const rule of SECRET_PATTERNS) {
+    out = out.replace(rule.rx, \`[AGENTSHIELD_REDACTED:\${rule.id}]\`);
+  }
+  return out;
+}
+
+export interface McpToolResponse {
+  content: Array<{ type: string; text?: string; [k: string]: unknown }>;
+  isError?: boolean;
+}
+
+export function withAgentShieldRedaction<TArgs>(
+  handler: (args: TArgs) => Promise<McpToolResponse>,
+): (args: TArgs) => Promise<McpToolResponse> {
+  return async (args: TArgs) => {
+    const response = await handler(args);
+    return {
+      ...response,
+      content: response.content.map((block) =>
+        block.type === "text" && typeof block.text === "string"
+          ? { ...block, text: redactSecrets(block.text) }
+          : block,
+      ),
+    };
+  };
+}
+`;
+
+  const indexTs = `${streamableHttpImport}${agentShieldImport}import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -162,7 +222,7 @@ export class ${className} {
     });
 
     // 2. Tool Invocation
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const handleToolCall = async (request: any) => {
       const { name, arguments: args, _meta } = request.params as any;
       const effectiveArgs = { ...(args || {}), _meta };
 
@@ -204,7 +264,12 @@ export class ${className} {
       }
 
       throw new Error(\`Unknown tool: \${name}\`);
-    });
+    };
+
+    this.server.setRequestHandler(
+      CallToolRequestSchema,
+      ${includeAgentShield ? "withAgentShieldRedaction(handleToolCall)" : "handleToolCall"},
+    );
 
     // 3. Resources Listing
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -247,9 +312,71 @@ export class ${className} {
   }
 
   public async start(): Promise<void> {
-    const transport = new StdioServerTransport();
+${
+  usesStreamableHttp
+    ? `    const port = Number(process.env.PORT || 8080);
+    const sessions = new Set<string>();
+    const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+      if (req.url === "/health" && req.method === "GET") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok", server: "${name}", transport: "${transport}" }));
+        return;
+      }
+      if (req.url === "/mcp" && req.method === "POST") {
+        const sessionId = (req.headers["mcp-session-id"] as string) || randomUUID();
+        sessions.add(sessionId);
+        let body = "";
+        req.on("data", (chunk) => { body += chunk; });
+        req.on("end", () => {
+          try {
+            const rpc = JSON.parse(body || "{}");
+            res.writeHead(200, {
+              "Content-Type": "application/json",
+              "Mcp-Session-Id": sessionId,
+            });
+            res.end(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                id: rpc.id ?? null,
+                result: {
+                  protocolVersion: "2025-03-26",
+                  serverInfo: { name: "${name}", version: "0.1.0" },
+                  transport: "streamable-http",
+                  sessionId,
+                },
+              }),
+            );
+          } catch {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" } }));
+          }
+        });
+        return;
+      }
+      if (req.url === "/mcp" && req.method === "DELETE") {
+        const sid = req.headers["mcp-session-id"] as string;
+        if (sid) sessions.delete(sid);
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+      res.writeHead(404);
+      res.end("Not Found");
+    });
+
+    await new Promise<void>((resolveListen) => httpServer.listen(port, resolveListen));
+    console.error(\`${name} MCP Streamable HTTP server listening on http://127.0.0.1:\${port}/mcp\`);${
+      transport === "both"
+        ? `
+    const stdioTransport = new StdioServerTransport();
+    await this.server.connect(stdioTransport);
+    console.error("${name} MCP server also active on stdio");`
+        : ""
+    }`
+    : `    const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error("${name} MCP server running on stdio");
+    console.error("${name} MCP server running on stdio");`
+}
   }
 }
 
@@ -340,7 +467,7 @@ pnpm test
 MIT © ${author}
 `;
 
-  return [
+  const generatedFiles: GeneratedFile[] = [
     { path: "package.json", content: JSON.stringify(packageJson, null, 2) },
     { path: "tsconfig.json", content: JSON.stringify(tsconfig, null, 2) },
     { path: "tsup.config.ts", content: tsupConfig },
@@ -350,6 +477,15 @@ MIT © ${author}
     { path: "README.md", content: readme },
     { path: ".gitignore", content: "node_modules/\ndist/\n*.log\n.env\n" },
   ];
+
+  if (includeAgentShield) {
+    generatedFiles.push({
+      path: "src/agentshield-middleware.ts",
+      content: agentShieldMiddlewareTs,
+    });
+  }
+
+  return generatedFiles;
 }
 
 export function toSafeClassName(str: string): string {

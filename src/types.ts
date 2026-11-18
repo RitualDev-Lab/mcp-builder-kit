@@ -1,5 +1,5 @@
 export type McpLanguage = "typescript" | "python";
-export type McpTransport = "stdio" | "sse" | "both";
+export type McpTransport = "stdio" | "streamable-http" | "sse" | "both";
 
 export interface McpScaffoldOptions {
   projectName: string;
