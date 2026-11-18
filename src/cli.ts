@@ -9,6 +9,7 @@ import { McpProjectScaffolder } from "./scaffolder.js";
 import type {
   McpBadgeTier,
   McpLanguage,
+  McpMonetizeProvider,
   McpTransport,
   ToolDefinition,
   ToolParameter,
@@ -84,6 +85,7 @@ Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
   --transport, -t          Transport: 'stdio' (default), 'streamable-http', 'sse', or 'both'
   --with-agentshield       Wrap generated MCP tool handlers in automatic AgentShield secret redaction middleware
+  --monetize <dodo|stripe> Add paywall, license key verification & per-call metering middleware (Dodo Payments or Stripe)
   --dir, -d                Target output directory (defaults to ./<project-name>)
   --desc                   Short project description
   --author                 Project author name / organization
@@ -142,6 +144,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
 
     let language: McpLanguage = "typescript";
     let transport: McpTransport = "stdio";
+    let monetize: McpMonetizeProvider | undefined;
     let targetDir = "";
     let description = "High-performance Model Context Protocol (MCP) server";
     let author = "RitualDev Lab";
@@ -231,6 +234,17 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
       } else if (arg === "--author" && args[i + 1]) {
         author = args[i + 1];
         i++;
+      } else if (arg === "--monetize" && args[i + 1]) {
+        const providerVal = args[i + 1].toLowerCase();
+        if (providerVal === "dodo" || providerVal === "stripe") {
+          monetize = providerVal;
+        } else {
+          console.error(
+            `❌ Error: Invalid monetize provider '${args[i + 1]}'. Choose 'dodo' or 'stripe'.`,
+          );
+          process.exit(1);
+        }
+        i++;
       } else if (arg === "--template" && args[i + 1]) {
         if (args[i + 1].toLowerCase() === "devshelf") {
           description = "DevShelf Public Directory & Verified Free Tools MCP Provider";
@@ -246,6 +260,9 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
     if (includeAgentShield) {
       console.log("   • AgentShield:  enabled (automatic tool response secret redaction)");
     }
+    if (monetize) {
+      console.log(`   • Monetize:     ${monetize} (license verification + usage metering paywall)`);
+    }
     const force = args.includes("--force") || args.includes("-f");
 
     try {
@@ -257,6 +274,7 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         description,
         author,
         includeAgentShield,
+        monetize,
         force,
       });
 
