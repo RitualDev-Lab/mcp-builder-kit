@@ -24,6 +24,7 @@ export function generatePythonTemplate(options: McpScaffoldOptions): GeneratedFi
   const author = options.author || "RitualDev Lab";
   const transport = options.transport || "stdio";
   const includeAgentShield = Boolean(options.includeAgentShield);
+  const monetize = options.monetize;
   const fastMcpTransport = transport === "streamable-http" ? "streamable-http" : transport === "sse" ? "sse" : "stdio";
 
   const safeDescription = description.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -57,6 +58,7 @@ import sys
 import platform
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
+${monetize ? `from ${name}.monetize import verify_license\n` : ""}
 
 ${
   includeAgentShield
@@ -86,7 +88,7 @@ class EchoInput(BaseModel):
 @mcp.tool()
 def echo(message: str) -> str:
     """Echoes input back with execution status"""
-    payload = f"[Echo]: {message}"
+${monetize ? `    allowed, err = verify_license(os.getenv("MCP_ACTIVE_LICENSE_KEY", ""))\n    if not allowed:\n        return err\n` : ""}    payload = f"[Echo]: {message}"
     return ${includeAgentShield ? "redact_secrets(payload)" : "payload"}
 
 @mcp.tool()
@@ -170,7 +172,7 @@ pytest
 MIT © ${author}
 `;
 
-  return [
+  const generated: GeneratedFile[] = [
     { path: "pyproject.toml", content: pyprojectToml },
     { path: `${name}/__init__.py`, content: `"""${name} package"""\n__version__ = "0.1.0"\n` },
     { path: `${name}/server.py`, content: serverPy },
@@ -179,4 +181,40 @@ MIT © ${author}
     { path: "README.md", content: readme },
     { path: ".gitignore", content: "__pycache__/\n*.py[cod]\n.venv/\nvenv/\n*.egg-info/\ndist/\n.pytest_cache/\n" },
   ];
+
+  if (monetize) {
+    const checkoutUrl =
+      monetize === "stripe"
+        ? "https://buy.stripe.com/your_price_link"
+        : "https://checkout.dodopayments.com/buy/your_product_id";
+    const monetizePy = `"""MCP Monetize Paywall Middleware (${monetize})"""
+import hmac
+import os
+
+PROVIDER = "${monetize}"
+DEFAULT_CHECKOUT_URL = "${checkoutUrl}"
+_FREE_CALLS = 0
+
+
+def verify_license(license_key: str) -> tuple[bool, str]:
+    global _FREE_CALLS
+    raw_keys = os.getenv("MCP_LICENSE_KEYS", "")
+    valid_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+    enforce = os.getenv("MONETIZE_ENFORCE", "").lower() == "true" or bool(valid_keys)
+    checkout = os.getenv("MCP_CHECKOUT_URL", DEFAULT_CHECKOUT_URL)
+
+    if license_key and any(hmac.compare_digest(license_key, k) for k in valid_keys):
+        return True, ""
+
+    if not enforce:
+        _FREE_CALLS += 1
+        if _FREE_CALLS <= int(os.getenv("MCP_FREE_QUOTA", "10")):
+            return True, ""
+
+    return False, f"402 Payment Required ({PROVIDER}): subscribe at {checkout}"
+`;
+    generated.push({ path: `${name}/monetize.py`, content: monetizePy });
+  }
+
+  return generated;
 }

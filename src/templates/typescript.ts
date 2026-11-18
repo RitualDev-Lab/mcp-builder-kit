@@ -7,6 +7,7 @@ export function generateTypeScriptTemplate(options: McpScaffoldOptions): Generat
   const author = options.author || "RitualDev Lab";
   const transport = options.transport || "stdio";
   const includeAgentShield = Boolean(options.includeAgentShield);
+  const monetize = options.monetize;
   const usesStreamableHttp = transport === "streamable-http" || transport === "both";
 
   const dependencies: Record<string, string> = {
@@ -103,9 +104,165 @@ export default defineConfig({
   const agentShieldImport = includeAgentShield
     ? 'import { withAgentShieldRedaction } from "./agentshield-middleware.js";\n'
     : "";
+  const monetizeImport = monetize
+    ? 'import { verifyHttpMonetization, withMonetizePaywall } from "./monetize-middleware.js";\n'
+    : "";
   const streamableHttpImport = usesStreamableHttp
     ? 'import { createServer, type IncomingMessage, type ServerResponse } from "node:http";\nimport { randomUUID } from "node:crypto";\n'
     : "";
+
+  const checkoutUrlDefault =
+    monetize === "stripe"
+      ? "https://buy.stripe.com/your_price_link"
+      : "https://checkout.dodopayments.com/buy/your_product_id";
+  const envKeyName = monetize === "stripe" ? "STRIPE_WEBHOOK_SECRET" : "DODO_PAYMENTS_API_KEY";
+
+  const monetizeMiddlewareTs = `/**
+ * MCP Monetize Paywall & Usage Metering Middleware (${monetize === "stripe" ? "Stripe" : "Dodo Payments"})
+ * Enforces license-key verification and per-key usage quotas before executing paid MCP tools.
+ */
+
+import { timingSafeEqual } from "node:crypto";
+
+export type MonetizeProvider = "dodo" | "stripe";
+
+export interface MonetizeConfig {
+  provider: MonetizeProvider;
+  enforce: boolean;
+  freeQuota: number;
+  checkoutUrl: string;
+  validKeys: string[];
+}
+
+export interface MeteringDecision {
+  allowed: boolean;
+  statusCode: 200 | 402;
+  remainingQuota: number;
+  provider: MonetizeProvider;
+  checkoutUrl: string;
+  reason?: string;
+}
+
+const usageByKey = new Map<string, number>();
+
+export function getMonetizeConfig(): MonetizeConfig {
+  const rawKeys = process.env.MCP_LICENSE_KEYS || "";
+  return {
+    provider: "${monetize || "dodo"}",
+    enforce: process.env.MONETIZE_ENFORCE === "true" || rawKeys.length > 0,
+    freeQuota: Number(process.env.MCP_FREE_QUOTA ?? 10),
+    checkoutUrl: process.env.MCP_CHECKOUT_URL || "${checkoutUrlDefault}",
+    validKeys: rawKeys
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean),
+  };
+}
+
+function matchesValidKey(candidate: string, validKeys: string[]): boolean {
+  const candBuf = Buffer.from(candidate);
+  for (const key of validKeys) {
+    const keyBuf = Buffer.from(key);
+    if (candBuf.length === keyBuf.length && timingSafeEqual(candBuf, keyBuf)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function evaluateMonetization(
+  licenseKey?: string,
+  config: MonetizeConfig = getMonetizeConfig(),
+): MeteringDecision {
+  const key = (licenseKey || "").trim();
+
+  if (key && config.validKeys.length > 0 && matchesValidKey(key, config.validKeys)) {
+    const used = (usageByKey.get(key) || 0) + 1;
+    usageByKey.set(key, used);
+    return {
+      allowed: true,
+      statusCode: 200,
+      remainingQuota: Number.POSITIVE_INFINITY,
+      provider: config.provider,
+      checkoutUrl: config.checkoutUrl,
+    };
+  }
+
+  if (!config.enforce) {
+    const anonUsed = (usageByKey.get("__free__") || 0) + 1;
+    usageByKey.set("__free__", anonUsed);
+    if (anonUsed <= config.freeQuota) {
+      return {
+        allowed: true,
+        statusCode: 200,
+        remainingQuota: Math.max(0, config.freeQuota - anonUsed),
+        provider: config.provider,
+        checkoutUrl: config.checkoutUrl,
+      };
+    }
+  }
+
+  return {
+    allowed: false,
+    statusCode: 402,
+    remainingQuota: 0,
+    provider: config.provider,
+    checkoutUrl: config.checkoutUrl,
+    reason: \`Payment Required: valid \${config.provider.toUpperCase()} license key required. Subscribe at \${config.checkoutUrl}\`,
+  };
+}
+
+export function verifyHttpMonetization(
+  headers: Record<string, string | string[] | undefined>,
+): MeteringDecision {
+  const authHeader = headers.authorization;
+  const bearer =
+    typeof authHeader === "string" && authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : undefined;
+  const customKey =
+    typeof headers["x-mcp-license-key"] === "string"
+      ? headers["x-mcp-license-key"].trim()
+      : undefined;
+  return evaluateMonetization(bearer || customKey);
+}
+
+export interface PaidToolResponse {
+  content: Array<{ type: string; text?: string; [k: string]: unknown }>;
+  isError?: boolean;
+}
+
+export function withMonetizePaywall<TReq extends { params?: { _meta?: { licenseKey?: string } } }>(
+  handler: (request: TReq) => Promise<PaidToolResponse>,
+): (request: TReq) => Promise<PaidToolResponse> {
+  return async (request: TReq) => {
+    const licenseKey = request?.params?._meta?.licenseKey || process.env.MCP_ACTIVE_LICENSE_KEY;
+    const decision = evaluateMonetization(licenseKey);
+    if (!decision.allowed) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              error: "PAYMENT_REQUIRED",
+              statusCode: 402,
+              provider: decision.provider,
+              checkoutUrl: decision.checkoutUrl,
+              message: decision.reason,
+            }),
+          },
+        ],
+      };
+    }
+    return handler(request);
+  };
+}
+
+export function resetUsageCounters(): void {
+  usageByKey.clear();
+}
+`;
 
   const agentShieldMiddlewareTs = `/**
  * AgentShield Zero-Leak MCP Tool Response Middleware
@@ -153,7 +310,7 @@ export function withAgentShieldRedaction<TArgs>(
 }
 `;
 
-  const indexTs = `${streamableHttpImport}${agentShieldImport}import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+  const indexTs = `${streamableHttpImport}${agentShieldImport}${monetizeImport}import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -266,10 +423,16 @@ export class ${className} {
       throw new Error(\`Unknown tool: \${name}\`);
     };
 
-    this.server.setRequestHandler(
-      CallToolRequestSchema,
-      ${includeAgentShield ? "withAgentShieldRedaction(handleToolCall)" : "handleToolCall"},
-    );
+    const wrappedToolHandler = ${
+      monetize && includeAgentShield
+        ? "withMonetizePaywall(withAgentShieldRedaction(handleToolCall))"
+        : monetize
+          ? "withMonetizePaywall(handleToolCall)"
+          : includeAgentShield
+            ? "withAgentShieldRedaction(handleToolCall)"
+            : "handleToolCall"
+    };
+    this.server.setRequestHandler(CallToolRequestSchema, wrappedToolHandler);
 
     // 3. Resources Listing
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -322,7 +485,26 @@ ${
         res.end(JSON.stringify({ status: "ok", server: "${name}", transport: "${transport}" }));
         return;
       }
-      if (req.url === "/mcp" && req.method === "POST") {
+      if (req.url === "/mcp" && req.method === "POST") {${
+        monetize
+          ? `
+        const paywall = verifyHttpMonetization(req.headers);
+        if (!paywall.allowed) {
+          res.writeHead(402, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              error: {
+                code: -32002,
+                message: paywall.reason,
+                data: { provider: paywall.provider, checkoutUrl: paywall.checkoutUrl },
+              },
+            }),
+          );
+          return;
+        }`
+          : ""
+      }
         const sessionId = (req.headers["mcp-session-id"] as string) || randomUUID();
         sessions.add(sessionId);
         let body = "";
@@ -483,6 +665,17 @@ MIT © ${author}
       path: "src/agentshield-middleware.ts",
       content: agentShieldMiddlewareTs,
     });
+  }
+
+  if (monetize) {
+    generatedFiles.push({
+      path: "src/monetize-middleware.ts",
+      content: monetizeMiddlewareTs,
+    });
+    const readmeIdx = generatedFiles.findIndex((f) => f.path === "README.md");
+    if (readmeIdx !== -1) {
+      generatedFiles[readmeIdx].content += `\n## 💳 Monetization (${monetize === "stripe" ? "Stripe" : "Dodo Payments"})\n\nConfigure paywall enforcement via environment variables:\n\n\`\`\`bash\nexport MONETIZE_ENFORCE=true\nexport MCP_LICENSE_KEYS="lic_customer_1,lic_customer_2"\nexport MCP_CHECKOUT_URL="${checkoutUrlDefault}"\nexport ${envKeyName}="your_provider_secret"\n\`\`\`\n`;
+    }
   }
 
   return generatedFiles;
