@@ -22,6 +22,9 @@ export function generatePythonTemplate(options: McpScaffoldOptions): GeneratedFi
   const name = toSafePythonPackageName(options.projectName);
   const description = options.description || "High-performance FastMCP Server in Python";
   const author = options.author || "RitualDev Lab";
+  const transport = options.transport || "stdio";
+  const includeAgentShield = Boolean(options.includeAgentShield);
+  const fastMcpTransport = transport === "streamable-http" ? "streamable-http" : transport === "sse" ? "sse" : "stdio";
 
   const safeDescription = description.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
@@ -49,11 +52,28 @@ ${name} - Model Context Protocol Server
 ${escapePythonDocstring(description)}
 """
 import os
+import re
 import sys
 import platform
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
+${
+  includeAgentShield
+    ? `_AGENTSHIELD_PATTERNS = [
+    re.compile(r"\\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,160}\\b"),
+    re.compile(r"\\b(?:AKIA|ASIA|AIDA|AROA)[0-9A-Z]{16}\\b"),
+    re.compile(r"\\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,64}\\b"),
+]
+
+def redact_secrets(text: str) -> str:
+    sanitized = text
+    for pattern in _AGENTSHIELD_PATTERNS:
+        sanitized = pattern.sub("[AGENTSHIELD_REDACTED]", sanitized)
+    return sanitized
+`
+    : ""
+}
 # Initialize FastMCP Server
 mcp = FastMCP(
     name="${name}",
@@ -66,7 +86,8 @@ class EchoInput(BaseModel):
 @mcp.tool()
 def echo(message: str) -> str:
     """Echoes input back with execution status"""
-    return f"[Echo]: {message}"
+    payload = f"[Echo]: {message}"
+    return ${includeAgentShield ? "redact_secrets(payload)" : "payload"}
 
 @mcp.tool()
 def system_info() -> dict:
@@ -84,7 +105,7 @@ def get_metadata() -> str:
     return f"MCP Server: ${name}\\nDescription: ${description}"
 
 def main():
-    mcp.run()
+    mcp.run(transport="${fastMcpTransport}")
 
 if __name__ == "__main__":
     main()

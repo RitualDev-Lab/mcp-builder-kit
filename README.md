@@ -45,7 +45,13 @@
 mcp-builder-kit parses OpenAPI v3.0 and v3.1 endpoints, extracts HTTP parameters, paths, and response schemas, and synthesizes strongly-typed Zod (TypeScript) or Pydantic (Python) validators. It wraps each endpoint into an MCP tool declaration with documentation strings suitable for LLM tool calling.
 
 ### What transports are supported?
-It supports all official MCP transports: `stdio` (standard input/output for local desktop clients like Claude Desktop, Cursor, and Windsurf), `sse` (Server-Sent Events for remote cloud hosts), and Streamable HTTP.
+It supports all official MCP transports: `stdio` (standard input/output for local desktop clients like Claude Desktop, Cursor, and Windsurf), modern **`streamable-http`** (`--transport streamable-http`, exposing `/mcp` JSON-RPC + session headers for cloud/serverless deployments), legacy `sse`, and `both`.
+
+### How does `mcp-builder-kit` differ from `mcp-monetize`?
+| Package | License & Role | Primary Use Case |
+| :--- | :--- | :--- |
+| **`@ritualdev-lab/mcp-builder-kit`** (this repo) | **Free & Open-Source (Apache-2.0)** CLI & Scaffolder | Scaffold TypeScript/Python MCP servers (`stdio`, `streamable-http`, `sse`), wrap handlers with `--with-agentshield` zero-leak secret redaction, convert OpenAPI/GraphQL/Protobuf specs, run conformance `inspect`, and package for deployment. |
+| **`mcp-monetize`** ([RitualDev-Lab/mcp-monetize](https://github.com/RitualDev-Lab/mcp-monetize)) | **Commercial Monetization & Clearinghouse SDK** | Add per-call paywalls, Universal Pre-Paid MCP Credits, edge billing clearinghouse routing, and Stripe / Dodo Payments checkout links to monetized MCP servers. |
 
 ---
 
