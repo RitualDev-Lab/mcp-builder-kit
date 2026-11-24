@@ -65,18 +65,18 @@ runs:
         echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
         if [ "$INPUT_POST_PR_COMMENT" = "true" ] && [ -n "$GITHUB_TOKEN" ] && [ "$GH_EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
-          COMMENT_BODY=$(cat <<EOF
-### ⚡ MCP Server Protocol & Security Audit Report
-\`\`\`text
-$(cat .mcp-audit-report.txt)
-\`\`\`
-> 🛠️ *Audited by [MCP Builder Kit](https://mcp.ritualdev.in) production toolchain.*
-EOF
-)
-          export COMMENT_BODY
           node -e '
+            const fs = require("fs");
             const https = require("https");
-            const data = JSON.stringify({ body: process.env.COMMENT_BODY });
+            const report = fs.readFileSync(".mcp-audit-report.txt", "utf8");
+            const body = [
+              "### ⚡ MCP Server Protocol & Security Audit Report",
+              "```text",
+              report.trimEnd(),
+              "```",
+              "> 🛠️ *Audited by [MCP Builder Kit](https://mcp.ritualdev.in) production toolchain.*"
+            ].join("\n");
+            const data = JSON.stringify({ body });
             const repo = process.env.GH_REPOSITORY;
             const prNum = process.env.PR_NUMBER;
             const req = https.request({
