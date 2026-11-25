@@ -95,6 +95,13 @@ npx @ritualdev-lab/mcp-builder-kit audit ./src
 npx @ritualdev-lab/mcp-builder-kit package ./my-server --lang typescript --port 8080 --env "OPENAI_API_KEY,DB_HOST"
 ```
 
+### 8. Add Built-In Monetization & Paywalls (`@ritualdev-lab/mcp-monetize`)
+```bash
+# Scaffold an MCP server pre-wired with Dodo Payments / Stripe usage metering & license keys
+npx @ritualdev-lab/mcp-builder-kit init my-paid-mcp --monetize dodo
+```
+Then list & boost your finished server to thousands of AI engineers on **[MCPShelf](https://mcp.ritualdev.in/boost.html)**.
+
 ---
 
 ## 💻 CLI Commands & Options
