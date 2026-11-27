@@ -1,6 +1,6 @@
 export type McpLanguage = "typescript" | "python";
 export type McpTransport = "stdio" | "streamable-http" | "sse" | "both";
-export type McpMonetizeProvider = "dodo" | "stripe";
+export type McpMonetizeProvider = "dodo" | "stripe" | "polar";
 
 export interface McpScaffoldOptions {
   projectName: string;

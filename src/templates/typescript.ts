@@ -114,17 +114,30 @@ export default defineConfig({
   const checkoutUrlDefault =
     monetize === "stripe"
       ? "https://buy.stripe.com/your_price_link"
-      : "https://checkout.dodopayments.com/buy/your_product_id";
-  const envKeyName = monetize === "stripe" ? "STRIPE_WEBHOOK_SECRET" : "DODO_PAYMENTS_API_KEY";
+      : monetize === "polar"
+        ? "https://polar.sh/your-org/products/your_product_slug"
+        : "https://checkout.dodopayments.com/buy/your_product_id";
+  const envKeyName =
+    monetize === "stripe"
+      ? "STRIPE_WEBHOOK_SECRET"
+      : monetize === "polar"
+        ? "POLAR_ACCESS_TOKEN"
+        : "DODO_PAYMENTS_API_KEY";
+  const providerDisplayName =
+    monetize === "stripe"
+      ? "Stripe"
+      : monetize === "polar"
+        ? "Polar.sh"
+        : "Dodo Payments";
 
   const monetizeMiddlewareTs = `/**
- * MCP Monetize Paywall & Usage Metering Middleware (${monetize === "stripe" ? "Stripe" : "Dodo Payments"})
+ * MCP Monetize Paywall & Usage Metering Middleware (${providerDisplayName})
  * Enforces license-key verification and per-key usage quotas before executing paid MCP tools.
  */
 
 import { timingSafeEqual } from "node:crypto";
 
-export type MonetizeProvider = "dodo" | "stripe";
+export type MonetizeProvider = "dodo" | "stripe" | "polar";
 
 export interface MonetizeConfig {
   provider: MonetizeProvider;
@@ -674,7 +687,7 @@ MIT © ${author}
     });
     const readmeIdx = generatedFiles.findIndex((f) => f.path === "README.md");
     if (readmeIdx !== -1) {
-      generatedFiles[readmeIdx].content += `\n## 💳 Monetization (${monetize === "stripe" ? "Stripe" : "Dodo Payments"})\n\nConfigure paywall enforcement via environment variables:\n\n\`\`\`bash\nexport MONETIZE_ENFORCE=true\nexport MCP_LICENSE_KEYS="lic_customer_1,lic_customer_2"\nexport MCP_CHECKOUT_URL="${checkoutUrlDefault}"\nexport ${envKeyName}="your_provider_secret"\n\`\`\`\n`;
+      generatedFiles[readmeIdx].content += `\n## 💳 Monetization (${providerDisplayName})\n\nConfigure paywall enforcement via environment variables:\n\n\`\`\`bash\nexport MONETIZE_ENFORCE=true\nexport MCP_LICENSE_KEYS="lic_customer_1,lic_customer_2"\nexport MCP_CHECKOUT_URL="${checkoutUrlDefault}"\nexport ${envKeyName}="your_provider_secret"\n\`\`\`\n`;
     }
   }
 

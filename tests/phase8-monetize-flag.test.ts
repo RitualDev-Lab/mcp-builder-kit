@@ -108,3 +108,41 @@ test("Phase 8: McpProjectScaffolder supports --monetize stripe for TypeScript an
     rmSync(workDir, { recursive: true, force: true });
   }
 });
+
+test("Phase 8: McpProjectScaffolder supports --monetize polar for TypeScript and Python", () => {
+  const workDir = mkdtempSync(join(tmpdir(), "mcp-phase8-polar-"));
+  const tsDir = join(workDir, "paid-polar-ts");
+  const pyDir = join(workDir, "paid-polar-py");
+
+  try {
+    const tsRes = McpProjectScaffolder.scaffold({
+      projectName: "paid-polar-ts",
+      targetDir: tsDir,
+      language: "typescript",
+      transport: "streamable-http",
+      monetize: "polar",
+    });
+    assert.ok(tsRes.filesCreated.includes("src/monetize-middleware.ts"));
+    const tsMon = readFileSync(join(tsDir, "src/monetize-middleware.ts"), "utf8");
+    assert.match(tsMon, /provider: "polar"/);
+    assert.match(tsMon, /polar\.sh/);
+    const tsReadme = readFileSync(join(tsDir, "README.md"), "utf8");
+    assert.match(tsReadme, /Polar\.sh/);
+    assert.match(tsReadme, /POLAR_ACCESS_TOKEN/);
+
+    const pyRes = McpProjectScaffolder.scaffold({
+      projectName: "paid-polar-py",
+      targetDir: pyDir,
+      language: "python",
+      transport: "streamable-http",
+      includeAgentShield: true,
+      monetize: "polar",
+    });
+    assert.ok(pyRes.filesCreated.includes("paid_polar_py/monetize.py"));
+    const pyMon = readFileSync(join(pyDir, "paid_polar_py/monetize.py"), "utf8");
+    assert.match(pyMon, /PROVIDER = "polar"/);
+    assert.match(pyMon, /polar\.sh/);
+  } finally {
+    rmSync(workDir, { recursive: true, force: true });
+  }
+});
