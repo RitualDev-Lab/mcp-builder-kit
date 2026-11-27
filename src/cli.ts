@@ -85,7 +85,7 @@ Options for 'init':
   --lang, -l               Language: 'typescript' (default) or 'python'
   --transport, -t          Transport: 'stdio' (default), 'streamable-http', 'sse', or 'both'
   --with-agentshield       Wrap generated MCP tool handlers in automatic AgentShield secret redaction middleware
-  --monetize <dodo|stripe> Add paywall, license key verification & per-call metering middleware (Dodo Payments or Stripe)
+  --monetize <dodo|stripe|polar> Add paywall, license key verification & per-call metering middleware (Dodo Payments, Stripe, or Polar.sh)
   --dir, -d                Target output directory (defaults to ./<project-name>)
   --desc                   Short project description
   --author                 Project author name / organization
@@ -236,11 +236,11 @@ export async function runCli(args: string[] = process.argv.slice(2)): Promise<vo
         i++;
       } else if (arg === "--monetize" && args[i + 1]) {
         const providerVal = args[i + 1].toLowerCase();
-        if (providerVal === "dodo" || providerVal === "stripe") {
+        if (providerVal === "dodo" || providerVal === "stripe" || providerVal === "polar") {
           monetize = providerVal;
         } else {
           console.error(
-            `❌ Error: Invalid monetize provider '${args[i + 1]}'. Choose 'dodo' or 'stripe'.`,
+            `❌ Error: Invalid monetize provider '${args[i + 1]}'. Choose 'dodo', 'stripe', or 'polar'.`,
           );
           process.exit(1);
         }

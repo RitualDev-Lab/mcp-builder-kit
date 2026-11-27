@@ -186,7 +186,9 @@ MIT © ${author}
     const checkoutUrl =
       monetize === "stripe"
         ? "https://buy.stripe.com/your_price_link"
-        : "https://checkout.dodopayments.com/buy/your_product_id";
+        : monetize === "polar"
+          ? "https://polar.sh/your-org/products/your_product_slug"
+          : "https://checkout.dodopayments.com/buy/your_product_id";
     const monetizePy = `"""MCP Monetize Paywall Middleware (${monetize})"""
 import hmac
 import os
